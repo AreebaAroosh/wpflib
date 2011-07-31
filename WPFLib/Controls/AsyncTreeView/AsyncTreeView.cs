@@ -723,12 +723,17 @@ namespace WPFLib
 				AsyncTreeVirtualizingStackPanel virtualizingPanel =
 					itemsHostPanel as AsyncTreeVirtualizingStackPanel;
 
-				//for (int i = 0, count = container.Items.Count; i < count; i++)
-				//{
 				TreeViewItem subContainer;
 				if (virtualizingPanel != null)
 				{
-					// Bring the item into view so 
+                    while (container.ItemContainerGenerator.Status == GeneratorStatus.NotStarted)
+                    {
+                        // Тупо ожидаем когда начнется генерация
+                        // иногда почему-то падает на BrinIntoView из-за того что генерация не начиналась
+                        yield return Throttle.Yield;
+                    }
+                    
+                    // Bring the item into view so 
 					// that the container will be generated.
 					virtualizingPanel.BringIntoView(index);
 
