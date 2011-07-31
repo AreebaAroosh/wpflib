@@ -281,6 +281,14 @@ namespace WPFLib
 		}
 
 		public new static readonly DependencyProperty SelectedItemProperty = DependencyProperty.Register("SelectedItem", typeof(object), typeof(AsyncTreeView), new FrameworkPropertyMetadata() { PropertyChangedCallback = new PropertyChangedCallback(OnSelectedItemChanged), CoerceValueCallback = new CoerceValueCallback(OnCoerceSelectedItem), BindsTwoWayByDefault = false });
+
+        /// <summary>
+        /// С осторожностью делаем TwoWay или OneWayToSource байндинги
+        /// в случае запрета смены узла может произойти ситуация что в Source будет установлен
+        /// новый выбранный узел, когда на самом деле выбор был запрещен и остался неизменным
+        /// Связано с работой Coerce
+        /// http://connect.microsoft.com/VisualStudio/feedback/details/489775/wpf-binding-expression-updates-source-before-coercevaluecallback-is-called
+        /// </summary>
 		public new object SelectedItem
 		{
 			get { return (object)GetValue(SelectedItemProperty); }
