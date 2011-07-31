@@ -1,0 +1,75 @@
+﻿<Window x:Class="WPFLib.Dialogs.ItemSelectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:ei="clr-namespace:Microsoft.Expression.Interactivity.Core;assembly=Microsoft.Expression.Interactions" 
+        xmlns:local="clr-namespace:WPFLib.Dialogs" 
+        mc:Ignorable="d" 
+        xmlns:Beh="clr-namespace:WPFLib.Behaviors"
+        xmlns:Lib="clr-namespace:WPFLib"
+        x:Name="wnd"
+        Title="Выберите объект" Height="496" Width="484" MinHeight="250" MinWidth="250"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <local:DefaultCatalogNameConverter x:Key="nameConverter"/>
+        <HierarchicalDataTemplate x:Key="ItemViewTemplate" ItemsSource="{Binding ViewChildren}">
+            <Grid>
+                <TextBlock x:Name="name" Text="{Binding Converter={StaticResource nameConverter}}" Margin="2" d:LayoutOverrides="Height" Visibility="Visible"/>                
+            </Grid>
+        </HierarchicalDataTemplate>
+    </Window.Resources>
+    <i:Interaction.Triggers>
+        <ei:DataTrigger Binding="{Binding State}" Value="Work">
+            <Beh:GoToStateActionFixed TargetObject="{Binding ElementName=wnd}" StateName="Work"/>
+        </ei:DataTrigger>
+        <Lib:DataBindingTrigger Binding="{Binding State}" Value="Ready">
+            <Beh:GoToStateActionFixed TargetObject="{Binding ElementName=wnd}" StateName="Ready"/>
+        </Lib:DataBindingTrigger>
+    </i:Interaction.Triggers>
+
+    <Grid>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="VisualStateGroup">
+                <VisualState x:Name="Work">
+                    <Storyboard>
+                        <BooleanAnimationUsingKeyFrames Storyboard.TargetProperty="(WaitIndicator.Visible)" Storyboard.TargetName="treeView">
+                            <DiscreteBooleanKeyFrame KeyTime="0" Value="True"/>
+                        </BooleanAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+                <VisualState x:Name="Ready">
+                    <Storyboard>
+                        <BooleanAnimationUsingKeyFrames Storyboard.TargetProperty="(WaitIndicator.Visible)" Storyboard.TargetName="treeView">
+                            <DiscreteBooleanKeyFrame KeyTime="0" Value="False"/>
+                        </BooleanAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Lib:AsyncTreeView Grid.Row="0"  x:Name="treeView" ItemTemplate="{DynamicResource ItemViewTemplate}" ItemsSource="{Binding Root}" ScrollViewer.HorizontalScrollBarVisibility="Auto" SortField="{Binding SortField}">
+            <Lib:AsyncTreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type Lib:AsyncTreeViewItem}">
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    <Setter Property="CanExpand" Value="{Binding CanExpand, Mode=TwoWay}"/>
+                </Style>
+            </Lib:AsyncTreeView.ItemContainerStyle>
+        </Lib:AsyncTreeView>
+        
+        <Grid Grid.Row="1">
+            <Button Height="23" x:Name="btnOk"  Click="OKButtonClicked" IsDefault="True" Margin="0,2,120,2" HorizontalAlignment="Right" Width="100">OK</Button>
+            <Button Height="23" Click="CancelClicked" IsCancel="True" Margin="0,2,6,2" HorizontalAlignment="Right" Width="100">Отмена</Button>
+        </Grid>
+    </Grid>
+</Window>

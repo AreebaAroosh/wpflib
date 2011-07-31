@@ -1,0 +1,296 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:FloatTabControl="clr-namespace:WPFLib.Controls" xmlns:UI="clr-namespace:Pochta.UI">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/PresentationFramework.Aero;V3.0.0.0;31bf3856ad364e35;component\themes/aero.normalcolor.xaml" />
+        <ResourceDictionary Source="/WPFLib;component/themes/Styles.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style TargetType="FloatTabControl:FloatTabControl">
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FFFFFFFF" Offset="0" />
+                    <GradientStop Color="#FFFEFEFE" Offset="1" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderBrush">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FFA3AEB9" Offset="0" />
+                    <GradientStop Color="#FF8399A9" Offset="0.375" />
+                    <GradientStop Color="#FF718597" Offset="0.375" />
+                    <GradientStop Color="#FF617584" Offset="1" />
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="5" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="FloatTabControl:FloatTabControl">
+                    <ControlTemplate.Resources>
+                        <Style TargetType="{x:Type TabItem}">
+                            <Setter Property="IsTabStop" Value="False" />
+                            <Setter Property="Background" Value="#FF1F3B53" />
+                            <Setter Property="BorderBrush" Value="#FFA3AEB9" />
+                            <Setter Property="BorderThickness" Value="1" />
+                            <Setter Property="Padding" Value="6,2,6,2" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                            <Setter Property="MinWidth" Value="5" />
+                            <Setter Property="MinHeight" Value="5" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="TabItem">
+                                        <Grid x:Name="Root" >
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup x:Name="CommonStates">
+                                                    <VisualStateGroup.Transitions>
+                                                        <VisualTransition GeneratedDuration="0" />
+                                                        <VisualTransition To="MouseOver" GeneratedDuration="0:0:0.1" />
+                                                    </VisualStateGroup.Transitions>
+                                                    <VisualState x:Name="Normal" />
+                                                    <VisualState x:Name="MouseOver">
+                                                       
+                                                    </VisualState>
+                                                    <VisualState x:Name="Disabled">
+                                                        
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                                <VisualStateGroup x:Name="SelectionStates">
+                                                    <VisualState x:Name="Unselected" />
+                                                    <VisualState x:Name="Selected" />
+                                                </VisualStateGroup>
+                                                <VisualStateGroup x:Name="FocusStates">
+                                                    <VisualState x:Name="Focused">
+                                                        
+                                                    </VisualState>
+                                                    <VisualState x:Name="Unfocused">
+                                                       
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>
+
+                                            <!-- TabStripPlacement Top | Selected  -->
+                                            <ToggleButton x:Name="Placement" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, FallbackValue=False}"   Content="{TemplateBinding Header}" Margin="2,2" />                                                                                            
+
+                                        </Grid>
+                                        <ControlTemplate.Triggers>                                            
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter TargetName="Placement" Property="IsEnabled" Value="False"/>                                                
+                                            </Trigger>
+                                            <!--<DataTrigger Binding="{Binding IsChecked, ElementName=Placement}" Value="False">
+                                                <Setter Property="IsSelected" Value="False"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsChecked, ElementName=Placement}" Value="True">
+                                                <Setter Property="IsSelected" Value="True"/>
+                                            </DataTrigger>-->                                            
+                                        </ControlTemplate.Triggers>
+                                        
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>                            
+                        </Style>                        
+                    </ControlTemplate.Resources>
+                    
+                    <Grid x:Name="Root" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" VerticalAlignment="{TemplateBinding VerticalAlignment}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}">
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="VisualStates">
+                                <VisualState x:Name="HiddenContent">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderLeft" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Collapsed}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderTop" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Collapsed}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderRight" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Collapsed}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderBottom" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Collapsed}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="ShownContent">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderLeft" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderTop" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderRight" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="BorderBottom" Storyboard.TargetProperty="(Border.Visibility)">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Visible}"/>
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualStateGroup.Transitions>
+                                    <VisualTransition GeneratedDuration="0" />
+                                </VisualStateGroup.Transitions>
+
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="Disabled">
+                                    <Storyboard>
+                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="DisabledVisualTop" Storyboard.TargetProperty="Opacity">
+                                            <SplineDoubleKeyFrame KeyTime="0" Value="1" />
+                                        </DoubleAnimationUsingKeyFrames>
+                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="DisabledVisualBottom" Storyboard.TargetProperty="(UIElement.Opacity)">
+                                            <SplineDoubleKeyFrame KeyTime="0" Value="1" />
+                                        </DoubleAnimationUsingKeyFrames>
+                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="DisabledVisualLeft" Storyboard.TargetProperty="(UIElement.Opacity)">
+                                            <SplineDoubleKeyFrame KeyTime="0" Value="1" />
+                                        </DoubleAnimationUsingKeyFrames>
+                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="DisabledVisualRight" Storyboard.TargetProperty="(UIElement.Opacity)">
+                                            <SplineDoubleKeyFrame KeyTime="0" Value="1" />
+                                        </DoubleAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>                        
+
+                        <!-- TabStripPlacement Top -->
+                        <Grid x:Name="TemplateTop" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TabPanel x:Name="TabPanelTop" IsItemsHost="True" Canvas.ZIndex="1" Margin="2,2,2,-1" />
+
+                            <Border x:Name="BorderTop"  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Grid.Row="1" MinHeight="10" MinWidth="10" CornerRadius="0,0,3,3">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderThickness="1" CornerRadius="2">
+                                        <Button  x:Name="PART_ClosePanelTop" HorizontalAlignment="Right" Width="Auto" VerticalAlignment="Center" Grid.Column="2" Style="{StaticResource CloseButtonStyle}" Margin="2"/>
+                                    </Border>
+                                    <ContentPresenter Grid.Row="1" x:Name="ContentTop" ContentSource="SelectedContent" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" Cursor="{TemplateBinding Cursor}" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="DisabledVisualTop" IsHitTestVisible="False" Opacity="0" Canvas.ZIndex="1" Background="#8CFFFFFF" Grid.RowSpan="2" CornerRadius="0,0,3,3" Grid.Row="1" />
+                            <UI:ResizeThumbSimple x:Name="ResizeTop" Grid.Row="1" Height="2"  TrackedControl="{Binding ElementName=TemplateTop}" VerticalAlignment="Bottom" Cursor="SizeNS"/>
+                        </Grid>
+
+                        <!-- TabStripPlacement Bottom -->
+                        <Grid x:Name="TemplateBottom" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TabPanel x:Name="TabPanelBottom" IsItemsHost="True" Canvas.ZIndex="1" Grid.Row="1" Margin="2,-1,2,2" />
+
+                            <Border x:Name="BorderBottom"  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" MinHeight="10" MinWidth="10" CornerRadius="3,3,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderThickness="1" CornerRadius="2">
+                                        <Button  x:Name="PART_ClosePanelBottom" HorizontalAlignment="Right" Width="Auto" VerticalAlignment="Center" Grid.Column="2" Style="{StaticResource CloseButtonStyle}" Margin="2"/>
+                                    </Border>
+                                    <ContentPresenter Grid.Row="1" x:Name="ContentBottom" ContentSource="SelectedContent"  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" Cursor="{TemplateBinding Cursor}" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="DisabledVisualBottom" IsHitTestVisible="False" Opacity="0" Canvas.ZIndex="1" Background="#8CFFFFFF" CornerRadius="3,3,0,0" />
+                        </Grid>
+
+                        <!-- TabStripPlacement Left -->
+                        <Grid x:Name="TemplateLeft" Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!--Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}"  Canvas.ZIndex="1" Margin="2,2,2,2"  CornerRadius="0,3,3,0"-->
+                            <TabPanel x:Name="TabPanelLeft" Canvas.ZIndex="1" Margin="2,2,2,2" IsItemsHost="True" />
+                            <!--</Border>-->
+
+                            <Border x:Name="BorderLeft" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Grid.Column="1" MinHeight="10" MinWidth="10" CornerRadius="0,3,3,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" CornerRadius="2" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0" Background="{TemplateBinding Background}">
+                                        <Button  x:Name="PART_ClosePanelLeft" HorizontalAlignment="Right" Width="Auto" VerticalAlignment="Center" Grid.Column="2" Style="{StaticResource CloseButtonStyle}" Margin="2"/>
+                                    </Border>
+                                    <ContentPresenter Grid.Row="1" x:Name="ContentLeft" ContentSource="SelectedContent"  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" Cursor="{TemplateBinding Cursor}" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="DisabledVisualLeft" Visibility="{Binding Visibility, ElementName=BorderLeft}" IsHitTestVisible="False" Opacity="0" Canvas.ZIndex="1" Background="#8CFFFFFF" CornerRadius="0,3,3,0" Grid.Column="1" />
+                            <UI:ResizeThumbSimple x:Name="ResizeLeft" Grid.Row="1" Grid.Column="1"  Width="2" VerticalAlignment="Stretch"  TrackedControl="{Binding ElementName=TemplateLeft}" HorizontalAlignment="Right" Cursor="SizeWE"/>
+                        </Grid>
+
+                        <!-- TabStripPlacement Right -->
+                        <Grid x:Name="TemplateRight" Width="{Binding Width, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TabPanel x:Name="TabPanelRight" IsItemsHost="True" Grid.Column="1" Canvas.ZIndex="1" Margin="-1,2,2,2" />
+
+                            <Border x:Name="BorderRight" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" MinHeight="10" MinWidth="10" CornerRadius="3,0,0,3">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderThickness="1" CornerRadius="2">
+                                        <Button  x:Name="PART_ClosePanelRight" HorizontalAlignment="Right" Width="Auto" VerticalAlignment="Center" Grid.Column="2" Style="{StaticResource CloseButtonStyle}" Margin="2"/>
+                                    </Border>
+                                    <ContentPresenter Grid.Row="1" x:Name="ContentRight" ContentSource="SelectedContent"  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" Cursor="{TemplateBinding Cursor}" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="DisabledVisualRight" Visibility="{Binding Visibility, ElementName=BorderRight}" IsHitTestVisible="False" Opacity="0" Canvas.ZIndex="1" Background="#8CFFFFFF" CornerRadius="3,0,0,3" Margin="0" />
+                            <UI:ResizeThumbSimple x:Name="ResizeRight" Grid.Row="1" Grid.Column="0"  Width="2" VerticalAlignment="Stretch"  TrackedControl="{Binding ElementName=TemplateRight}" HorizontalAlignment="Left" Cursor="SizeWE"/>
+                        </Grid>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="TabStripPlacement" Value="Left">
+                            <Setter TargetName="TemplateLeft" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="TabStripPlacement" Value="Top">
+                            <Setter TargetName="TemplateTop" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="TabStripPlacement" Value="Right">
+                            <Setter TargetName="TemplateRight" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="TabStripPlacement" Value="Bottom">
+                            <Setter TargetName="TemplateBottom" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsResizeEnabled" Value="False">
+                            <Setter TargetName="ResizeLeft" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="ResizeTop" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="SelectedItem" Value="{x:Null}">
+                            <Setter TargetName="BorderLeft" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="BorderRight" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="ResizeLeft" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="ResizeRight" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+
+   
+
+</ResourceDictionary>

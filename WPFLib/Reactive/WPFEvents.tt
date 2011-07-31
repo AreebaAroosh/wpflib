@@ -1,0 +1,31 @@
+﻿<#@ template language="C#v3.5" debug="True" hostspecific="True"#>
+<#@ output extension="cs" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Windows.Forms" #>
+<#@ assembly name="PresentationFramework" #>
+<#@ assembly name="PresentationCore" #>
+<#@ assembly name="System.Xaml" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Reflection" #>
+<#  
+Func<Type, bool> filter = t => t.IsPublic &&!t.IsInterface 
+	&& typeof(System.Windows.DependencyObject).IsAssignableFrom(t);
+var uiElement = typeof(System.Windows.UIElement).Assembly.GetTypes().Where(filter);
+var frameworkElement = typeof(System.Windows.FrameworkElement ).Assembly.GetTypes().Where(filter);
+var types = frameworkElement.Concat(uiElement);
+#>
+using System.Linq;
+using System.Collections.Generic;
+
+namespace System
+{
+	public static class ExtensionMethods
+	{
+<#
+	Generate(types);
+#>
+	}
+}
+<#@ include file="ObservableEvents.ttinclude" #>

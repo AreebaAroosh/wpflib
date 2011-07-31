@@ -1,0 +1,85 @@
+﻿<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:local="clr-namespace:WPFLib"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:ic="clr-namespace:Microsoft.Expression.Interactivity.Core;assembly=Microsoft.Expression.Interactions" 
+    x:Name="window" mc:Ignorable="d"
+    xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity" 
+    x:Class="WPFLib.Dialogs.DetailedMessageBox" 
+    MinHeight="160" MinWidth="483" Width="483" WindowStartupLocation="CenterOwner" d:DesignHeight="158" SizeToContent="Height" ShowInTaskbar="False" Height="160">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+    </Window.Resources>
+	<Window.Background>
+		<SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlColorKey}}"/>
+	</Window.Background>
+    <Grid>
+        
+    	<!--<VisualStateManager.CustomVisualStateManager>
+    		<ic:ExtendedVisualStateManager/>
+    	</VisualStateManager.CustomVisualStateManager>-->
+    	<Grid.RowDefinitions>
+    		<RowDefinition MinHeight="125" Name="msgRow"/>
+    		<RowDefinition Height="Auto" Name="detailsRow"/>
+    	</Grid.RowDefinitions>
+    	<VisualStateManager.VisualStateGroups>
+    		<VisualStateGroup x:Name="Main">
+    			<VisualState x:Name="Detailed">
+    				<Storyboard>
+    					<ObjectAnimationUsingKeyFrames BeginTime="00:00:00" Duration="00:00:00.0010000" Storyboard.TargetName="richTextBoxDetails" Storyboard.TargetProperty="(UIElement.Visibility)">
+    						<DiscreteObjectKeyFrame KeyTime="00:00:00" Value="{x:Static Visibility.Visible}"/>
+    					</ObjectAnimationUsingKeyFrames>
+    				</Storyboard>
+    			</VisualState>
+    			<VisualState x:Name="Base"/>
+    		</VisualStateGroup>
+    	</VisualStateManager.VisualStateGroups>
+    	<local:HyperLinkRichTextBox x:Name="richTextBoxDetails" Margin="2" IsReadOnly="True" Grid.Row="1" Visibility="Collapsed" HyperLinkText="{Binding Details, ElementName=window, Mode=Default}" VerticalScrollBarVisibility="Auto">
+    		<FlowDocument>
+    			<Paragraph><Run Text="HyperLinkRichTextBox"/></Paragraph>
+    		</FlowDocument>
+    	</local:HyperLinkRichTextBox>
+    	<Grid Width="Auto" Height="Auto" Margin="1" d:LayoutOverrides="Width">
+    		<Grid.ColumnDefinitions>
+    			<ColumnDefinition Width="Auto"/>
+    			<ColumnDefinition/>
+    		</Grid.ColumnDefinitions>
+    		<Grid.RowDefinitions>
+    			<RowDefinition/>
+    			<RowDefinition Height="Auto"/>
+    		</Grid.RowDefinitions>
+    		<StackPanel Margin="22,24,20,20" Orientation="Vertical" d:LayoutOverrides="Height" Grid.RowSpan="2">
+    			<Image x:Name="pictureBoxInfo" Stretch="None" HorizontalAlignment="Center"/>
+    			<TextBlock Visibility="{Binding ShowSendLogs, Converter={StaticResource BoolToVisConverter}, ElementName=window, Mode=Default}" x:Name="hlReport" HorizontalAlignment="Center" Margin="2,4,0,0" ToolTip="Отчет об ошибке будет отправлен разработчикам"><Hyperlink Click="btnSend_Click"><Run Text="Отчет..."/></Hyperlink></TextBlock>
+    		</StackPanel>
+    		<local:HyperLinkRichTextBox x:Name="richTextBoxMsg" Margin="2" Grid.Column="1" IsReadOnly="True" Background="{x:Null}" BorderThickness="0" HyperLinkText="{Binding Message, ElementName=window, Mode=Default}" VerticalScrollBarVisibility="Auto">
+    			<FlowDocument>
+    				<Paragraph><Run Text="HyperLinkRichTextBox"/></Paragraph>
+    			</FlowDocument>
+    		</local:HyperLinkRichTextBox>
+    		<Grid Width="Auto" Height="Auto" Margin="3,2" Grid.Column="1" Grid.Row="1">
+    			<Grid.ColumnDefinitions>
+    				<ColumnDefinition Width="Auto"/>
+    				<ColumnDefinition/>
+    			</Grid.ColumnDefinitions>
+    			<Button x:Name="btnSend" Margin="3,2" Width="96" Height="24" Content="Отчет..." Grid.Column="0" Click="btnSend_Click" Visibility="Collapsed"/>
+    			<StackPanel HorizontalAlignment="Right" Margin="0" Grid.Column="1" Orientation="Horizontal">
+    				<Button x:Name="btnClose" Command="ApplicationCommands.Close" Margin="3,2" Width="96" Height="24" Content="Закрыть"/>
+    				<ToggleButton x:Name="toggleButton" Margin="3,2" Width="96" Height="24" Content="Детали" IsChecked="{Binding IsDetailed, ElementName=window, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+    					<i:Interaction.Triggers>
+    						<i:EventTrigger EventName="Checked">
+    							<ic:GoToStateAction x:Name="_gotoDetailed" StateName="Detailed"/>
+    						</i:EventTrigger>
+    						<i:EventTrigger EventName="Unchecked">
+    							<ic:GoToStateAction x:Name="_gotoBase" StateName="Base"/>
+    						</i:EventTrigger>
+    					</i:Interaction.Triggers>
+    				</ToggleButton>
+    			</StackPanel>
+    		</Grid>
+    	</Grid>
+        
+    </Grid>
+</Window>

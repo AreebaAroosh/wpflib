@@ -1,0 +1,79 @@
+﻿<#+
+private static bool TryGetEventArgsType(EventInfo info, out Type eventArgs)
+{
+    eventArgs = null;
+
+    if ((info.GetAddMethod() == null) || (info.GetRemoveMethod() == null))
+        return false;
+
+    var method = info.EventHandlerType.GetMethod("Invoke");
+    var infoArray2 = method.GetParameters();
+    if ((infoArray2.Length != 2) || 
+        !infoArray2[0].ParameterType.Equals(typeof (object)) ||
+//        !(infoArray2[1].ParameterType.Equals(typeof (EventArgs)) ||
+//          infoArray2[1].ParameterType.IsSubclassOf(typeof (EventArgs)))
+//		||
+        (method.ReturnType != typeof (void)))
+        return false;
+
+    eventArgs = infoArray2[1].ParameterType;
+    return true;
+}
+private static string TypeToString(Type type)
+{
+    if (!type.IsGenericType)
+        return type.FullName;
+
+    string typeName = type.GetGenericTypeDefinition().FullName;
+
+    return string.Format("{0}<{1}>",
+        typeName.Substring(0, typeName.IndexOf("`" + type.GetGenericArguments().Length)),
+        string.Join(",", type.GetGenericArguments().Select(a => TypeToString(a)).ToArray()));
+}
+private void Generate(IEnumerable<Type> types)
+{
+	var q =
+		from t in types		
+		from e in t.GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+		select e;
+
+	foreach(var e in q)
+	{
+		Type eventArgsType = null;
+		if(TryGetEventArgsType(e, out eventArgsType))
+		{
+			if(eventArgsType.IsGenericType)
+				continue;
+			var eventArgsTypeName = TypeToString(eventArgsType);
+			var typeName = TypeToString(e.DeclaringType);
+			if(eventArgsType.IsSubclassOf(typeof (EventArgs)) || eventArgsType.Equals(typeof(EventArgs)))
+			{
+#>
+		public static IObservable<IEvent<<#= eventArgsTypeName #>>> <#= e.Name #>Observable(this <#= typeName #> source)
+		{
+			return Observable.FromEvent<<#= eventArgsTypeName #>>(source,"<#= e.Name #>" );
+		}
+<#+
+			}
+			else 
+			{
+				var handlerName = TypeToString(e.EventHandlerType);
+#>
+		public static IObservable<IEvent<<#= eventArgsTypeName #>>> <#= e.Name #>Observable(this <#= typeName #> source)
+		{
+            return Observable.Create<IEvent<<#= eventArgsTypeName #>>>((o) =>
+            {
+                <#= handlerName #> h = (s,e) => 
+                    {
+                        o.OnNext(Event.Create(s,e));
+                    };
+                source.<#= e.Name #> += h;
+                return () => { source.<#= e.Name #> -= h; };
+            });			
+		}
+<#+
+			}
+		}
+	}
+}
+#>

@@ -1,0 +1,18 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="WPFLib.Controls.WaitWindow"
+        xmlns:WPFLib="clr-namespace:WPFLib"
+        Title="Подождите" Height="125" Width="365" WPFLib:WindowHelper.CanMaximize="False" WPFLib:WindowHelper.CanMinimize="False" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="ToolWindow" ShowInTaskbar="False">
+    <Grid>
+    	<Grid.RowDefinitions>
+    	</Grid.RowDefinitions>
+        
+    	<StackPanel d:LayoutOverrides="Width" HorizontalAlignment="Center" VerticalAlignment="Center">
+        
+    		<WPFLib:WaitIndicatorControl HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    		<TextBlock TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center"><Run Language="ru-ru" x:Name="runText" Text="Выполняется операция ..."/></TextBlock>
+    	</StackPanel>
+        
+    </Grid>
+</Window>
