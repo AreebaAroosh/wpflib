@@ -15,58 +15,110 @@ namespace WPFLib.ModelView
     /// <summary>
     /// Базовый класс реализующий DataWrapper и управление доступом к нему
     /// </summary>
-    public class AccessUnitModelViewBase : ModelViewBase, IAccessUnitModeProvider, IDataWrapperProvider, IValidationErrorProvider, IValidationWrapperProvider
+    public abstract class AccessUnitModelViewBase : ModelViewBase, IAccessUnitModeProvider, IDataWrapperProvider, IValidationErrorProvider, IValidationWrapperProvider
     {
-        public string DefaultUri
+        protected DelegateAccessUnitCommand GetCommand(string id, Action executeMethod, Func<bool> canExecuteMethod, bool hideDisabled = false)
         {
-            get;
-            protected set;
+            IAccessUnit unit;
+            Units.TryGetValue(id, out unit);
+            var command = unit as DelegateAccessUnitCommand;
+            if (command == null)
+            {
+                command = CreateCommand(id, executeMethod, canExecuteMethod, hideDisabled);
+            }
+            return command;
         }
 
-        public IEnumerable<IValidationError> Errors
+        DelegateAccessUnitCommand CreateCommand(string id, Action executeMethod, Func<bool> canExecuteMethod, bool hideDisabled = false)
         {
-            get
-            {
-                return Wrappers.Values.Cast<IValidationErrorContainer>()
-                    .Concat(ValidationWrappers.Values.Cast<IValidationErrorContainer>())
-                    .SelectMany(w => w.Errors.Select(er => new ValidationErrorImpl((String.IsNullOrEmpty(w.Uri) ? DefaultUri : w.Uri), er.ErrorContent)));
-            }
-        }
-
-        Dictionary<string, IDataWrapper> _wrappers;
-        Dictionary<string, IDataWrapper> Wrappers
-        {
-            get
-            {
-                if (_wrappers == null)
-                {
-                    _wrappers = new Dictionary<string, IDataWrapper>();
-                }
-                return _wrappers;
-            }
+            var com = new DelegateAccessUnitCommand(this, executeMethod, canExecuteMethod) { HideDisabled = hideDisabled };
+            SetUnit(id, com);
+            return com;
         }
 
         public IDataWrapper GetDataWrapper(string property)
         {
-            IDataWrapper wrapper;
-            if(Wrappers.TryGetValue(property, out wrapper))
+            IAccessUnit unit;
+            Units.TryGetValue(property, out unit);
+            var wrapper = unit as IDataWrapper;
+            if (wrapper == null)
             {
-                return wrapper;
+                wrapper = CreateDataWrapper(property);
             }
-            return CreateDataWrapper(property);
+            return wrapper;
         }
 
         private IDataWrapper CreateDataWrapper(string property)
         {
-            var path = new PropertyPath(property);
-            var wrapper = new DataWrapperImpl(property, this);
-            Wrappers[property] = wrapper;
+            List<string> path = property.Split('.').ToList();
+            IDataWrapper prevWrapper = null;
+            for (int i = 0; i < path.Count; i++)
+            {
+                var currPath = String.Join(".", path.Take(i + 1).ToArray());
+                var currWrapper = GetDataWrapperDirect(currPath) ?? CreateDataWrapperDirect(currPath, prevWrapper);
+                prevWrapper = currWrapper;
+            }
+
+            return prevWrapper;
+        }
+
+        private IDataWrapper GetDataWrapperDirect(string property)
+        {
+            IAccessUnit unit;
+            Units.TryGetValue(property, out unit);
+            return unit as IDataWrapper;
+        }
+
+        private IDataWrapper CreateDataWrapperDirect(string property, IDataWrapper parent)
+        {
+            var wrapper = GetDataWrapperDirect(property);
+
+            wrapper = new DataWrapperImpl(property, this);
+            wrapper.Parent = parent;
+
+            SetUnit(property, wrapper);
             return wrapper;
         }
 
-        public IAccessUnit GetUnit(string name)
+        Dictionary<string, IAccessUnit> Units = new Dictionary<string, IAccessUnit>();
+
+        IAccessUnit CreateDummyUnit(string id)
         {
-            return GetDataWrapper(name);
+            var unit = new DummyAccesUnit(this);
+            Units[id] = unit;
+            return unit;
+        }
+
+        /// <summary>
+        /// Установка юнита в словарь Unit, напрямую нельзя
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="unit"></param>
+        private void SetUnit(string id, IAccessUnit unit)
+        {
+            IAccessUnit current = null;
+            Units.TryGetValue(id, out current);
+            if (current != null && !(current is DummyAccesUnit))
+                throw new Exception(String.Format("Access unit {0} already created", id));
+            Units[id] = unit;
+            if (current != null)
+            {
+                // Был создан прокси объект, сообщим ему о том что создан настойщий юнит
+                var dummy = current as DummyAccesUnit;
+                dummy.Source = unit;
+            }
+        }
+
+        public IAccessUnit GetUnit(string id)
+        {
+            IAccessUnit unit = null;
+            Units.TryGetValue(id, out unit);
+            if (unit == null)
+            {
+                // Создаем заглушку
+                return CreateDummyUnit(id);
+            }
+            return unit;
         }
 
         Dictionary<IAccessUnit, AccessUnitMode> _unitModes;
@@ -83,28 +135,15 @@ namespace WPFLib.ModelView
         }
 
         public static readonly PropertyChangedEventArgs DefaultModeArgs = PropertyChangedHelper.CreateArgs<AccessUnitModelViewBase>(c => c.DefaultMode);
-        private AccessUnitMode? _DefaultMode;
+        private AccessUnitMode _DefaultMode = AccessUnitMode.Edit;
 
         public AccessUnitMode DefaultMode
         {
             get
             {
-                if (_DefaultMode == null)
-                {
-                    // Попробуем так решить проблему передачи признака "только чтение"
-                    // Другой вариант это введение признака в контекст
-                    if (MVParent == null || !(MVParent is IAccessUnitModeProvider))
-                    {
-                        return AccessUnitMode.Edit;
-                    }
-                    else
-                    {
-                        return ((IAccessUnitModeProvider)MVParent).DefaultMode;
-                    }
-                }
-                return _DefaultMode.Value;
+                return _DefaultMode;
             }
-            set
+            protected set
             {
                 var oldValue = _DefaultMode;
                 _DefaultMode = value;
@@ -120,7 +159,19 @@ namespace WPFLib.ModelView
             OnUnitModeChanged(AccessUnitProviderHelper.AllUnits);
         }
 
-        public virtual AccessUnitMode GetMode(IAccessUnit unit)
+        private IEnumerable<AccessUnitMode> GetAllModes(IDataWrapper wrapper)
+        {
+            yield return GetModeDirect(wrapper);
+            IDataWrapper parent = wrapper.Parent;
+            while (parent != null)
+            {
+                yield return GetModeDirect(parent);
+                parent = parent.Parent;
+            }
+            yield break;
+        }
+
+        AccessUnitMode GetModeDirect(IAccessUnit unit)
         {
             AccessUnitMode m;
             if (UnitModes.TryGetValue(unit, out m))
@@ -128,6 +179,18 @@ namespace WPFLib.ModelView
                 return m.And(DefaultMode);
             }
             return DefaultMode;
+        }
+
+        public virtual AccessUnitMode GetMode(IAccessUnit unit)
+        {
+            if (unit is IDataWrapper)
+            {
+                return GetAllModes(unit as IDataWrapper).Aggregate<AccessUnitMode, AccessUnitMode>(DefaultMode, (l, r) => l.And(r));
+            }
+            else
+            {
+                return GetModeDirect(unit);
+            }
         }
 
         public virtual void SetMode(IAccessUnit unit, AccessUnitMode mode)
@@ -147,7 +210,36 @@ namespace WPFLib.ModelView
             }
         }
 
+        IEnumerable<IDataWrapper> GetAllChildren(IDataWrapper wrapper)
+        {
+            Queue<IDataWrapper> q = new Queue<IDataWrapper>();
+            q.Enqueue(wrapper);
+
+            while (q.Count > 0)
+            {
+                var obj = q.Dequeue();
+                foreach (var child in obj.Children)
+                {
+                    q.Enqueue(child);
+                    yield return child;
+                }
+            }
+            yield break;
+        }
+
         protected void OnUnitModeChanged(IAccessUnit unit)
+        {
+            OnUnitModeChangedDirect(unit);
+            if (unit is IDataWrapper)
+            {
+                foreach (var child in GetAllChildren(unit as IDataWrapper))
+                {
+                    OnUnitModeChangedDirect(child);
+                }
+            }
+        }
+
+        private void OnUnitModeChangedDirect(IAccessUnit unit)
         {
             unit.__RaiseModeChanged();
             if (UnitModeChanged != null)
@@ -157,6 +249,23 @@ namespace WPFLib.ModelView
         }
 
         public event AccessUnitModeChangedEventHandler UnitModeChanged;
+
+        public IEnumerable<IValidationError> Errors
+        {
+            get
+            {
+                return Units.Values.Where(u => u is IValidationErrorContainer).Cast<IValidationErrorContainer>()
+                    .Concat(ValidationWrappers.Values)
+                    .SelectMany(w => w.Errors.Select(er => new ValidationErrorImpl((String.IsNullOrEmpty(w.Uri) ? DefaultUri : w.Uri), er.ErrorContent)));
+            }
+        }
+
+        public string DefaultUri
+        {
+            get;
+            protected set;
+        }
+
 
         Dictionary<string, IValidationWrapper> _validationWrappers;
         Dictionary<string, IValidationWrapper> ValidationWrappers

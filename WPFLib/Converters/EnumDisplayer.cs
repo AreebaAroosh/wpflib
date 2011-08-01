@@ -12,7 +12,12 @@ using System.Windows.Markup;
 
 namespace WPFLib
 {
-
+    /// <summary>
+    //<UserControl.Resources>
+    //    <EnumDisplayer x:Key="AccessUnitMode" Type="{x:Type au:AccessUnitMode}"></EnumDisplayer>
+    //</UserControl.Resources>
+    //<ComboBox ItemsSource="{Binding Source={StaticResource AccessUnitMode}, Path=DisplayNames}" SelectedValue="{Binding UserNameWrapper.Mode,Converter={StaticResource AccessUnitMode}}"/>
+    /// </summary>
     [ContentProperty("OverriddenDisplayEntries")]
     public class EnumDisplayer : IValueConverter
     {

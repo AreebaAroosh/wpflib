@@ -8,6 +8,7 @@ using WPFLib.AccessUnit;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
+using System.Threading;
 
 namespace WPFLib.DataWrapper
 {
@@ -24,26 +25,33 @@ namespace WPFLib.DataWrapper
     /// </summary>
     public interface IValidationWrapper : INotifyPropertyChanged, IValidationErrorContainer
     {
-        bool IsAttached { get; }
         string Id { get; }
         IObservable<Unit> Trigger { get; set; }
         void AddRule(Func<ValidationResult> validator);
 
+        ReadOnlyObservableCollection<ValidationRule> Rules { get; }
+
         void OnBeforeAttach(Binding binding, DependencyObject target, DependencyProperty property);
         void OnAfterAttach(BindingExpressionBase bindingExpression);
-
-        IEnumerable<ValidationError> Validate();
     }
 
-    public interface IDataWrapper : IAccessUnit, INotifyPropertyChanged, IValidationErrorContainer
+    public static class DataWrapperExtensions
     {
-        string Id { get; }
+        //public static void AddRule(this IDataWrapper wrapper, Func<ValidationResult> validator)
+        //{
+        //    wrapper.AddRule(new FuncValidationRule(validator));
+        //}
+    }
+
+    public interface IDataWrapper : IValidationWrapper, IAccessUnit
+    {
         bool IsAttached { get; }
+
+        void AddAsyncRule(Func<CancellationToken, ValidationResult> validator);
+
         ObservableCollection<IDataWrapper> Dependent { get; }
         ObservableCollection<IDataWrapper> DependsOn { get; }
 
-        ReadOnlyObservableCollection<ValidationRule> Rules { get; }
-        void AddRule(Func<ValidationResult> validator);
         Func<object, object> Convert { get; set; }
         Func<object, object> ConvertBack { get; set; }
 
@@ -62,14 +70,5 @@ namespace WPFLib.DataWrapper
         /// Все дочерние врапперы на один уровень
         /// </summary>
         ObservableCollection<IDataWrapper> Children { get; }
-
-        /// <summary>
-        /// Подготовить байндинг
-        /// </summary>
-        /// <param name="binding"></param>
-        /// <param name="target"></param>
-        /// <param name="property"></param>
-        void OnBeforeAttach(Binding binding, DependencyObject target, DependencyProperty property);
-        void OnAfterAttach(BindingExpressionBase bindingExpression);
     }
 }

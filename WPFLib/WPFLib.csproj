@@ -286,6 +286,7 @@
     <Compile Include="Hyperlinks\HyperLinkTextBlock.cs" />
     <Compile Include="MainWindow\MainController.cs" />
     <Compile Include="MainWindow\WorkspaceItemBase.cs" />
+    <Compile Include="Misc\DelegateAccessUnitCommand.cs" />
     <Compile Include="Misc\DelegateCommand.cs" />
     <Compile Include="Misc\DispatcherPropertyChangedHelper.cs" />
     <Compile Include="Misc\ExceptionHelper.cs" />
@@ -298,6 +299,7 @@
     <Compile Include="Misc\WeakEventHelper.cs" />
     <Compile Include="Misc\WndHelper.cs" />
     <Compile Include="ModelView\AccessUnitModelViewBase.cs" />
+    <Compile Include="ModelView\DummyAccessUnit.cs" />
     <Compile Include="ModelView\IMVPropertyProvider.cs" />
     <Compile Include="ModelView\ModelViewBase.cs" />
     <Compile Include="Navigation\INavigationManager.cs" />
