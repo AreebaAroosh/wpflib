@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncTreeViewDemo", "AsyncT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFLib", "..\WPFLib\WPFLib.csproj", "{2DAAFB6B-F137-47FF-82DB-167967F31AE7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataWrapperDemo", "DataWrapperDemo\DataWrapperDemo.csproj", "{08380318-61BC-4E0E-AB69-98CAB1F4536D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,16 @@ Global
 		{2DAAFB6B-F137-47FF-82DB-167967F31AE7}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{2DAAFB6B-F137-47FF-82DB-167967F31AE7}.Release|x86.ActiveCfg = Release|x86
 		{2DAAFB6B-F137-47FF-82DB-167967F31AE7}.Release|x86.Build.0 = Release|x86
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

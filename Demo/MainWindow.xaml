@@ -7,6 +7,9 @@
             <MenuItem Header="Components">
                 <MenuItem Header="AsyncTreeView" Tag="AsyncTreeViewDemoControl"/>
             </MenuItem>
+            <MenuItem Header="Technologies">
+                <MenuItem Header="DataWrapper" Tag="DataWrapperDemoControl"/>
+            </MenuItem>
         </Menu>
         <ContentControl DockPanel.Dock="Top" x:Name="MainContent"/>
     </DockPanel>
