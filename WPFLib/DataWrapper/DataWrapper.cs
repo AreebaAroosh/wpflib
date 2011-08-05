@@ -199,6 +199,10 @@ namespace WPFLib.DataWrapper
             }
             // Асинхронная валидация вернула ошибку
             // нам надо просто установить её
+
+            // сразу сохраним её у нас
+            SetAsyncErrorExplicit(result.ErrorContent);
+
             if (IsAttached)
             {
                 // Байндинг ещё работает, установим ошибку в него
@@ -206,13 +210,12 @@ namespace WPFLib.DataWrapper
                 // Так же UpdateSource() необходимо выполнять только в UI потоке
                 currentTargetObject.Dispatcher.BeginInvoke((Action<ValidationResult>)SetAsyncError, DispatcherPriority.Send, new object[] { result });
             }
-            else
-            {
-                // Байндинг уже отсоединен, других ошибок нет
-                // Сохраняем ошибку у себя
-                LastError.Clear();
-                LastError.Add(new ValidationError(AsyncValidationRule, new object(), result.ErrorContent, null));
-            }
+        }
+
+        void SetAsyncErrorExplicit(object errorContent)
+        {
+            LastError.Clear();
+            LastError.Add(new ValidationError(AsyncValidationRule, new object(), errorContent, null));
         }
 
         /// <summary>
@@ -221,18 +224,22 @@ namespace WPFLib.DataWrapper
         /// <param name="result"></param>
         void SetAsyncError(ValidationResult result)
         {
-            lock (this)
+            if (IsAttached)
             {
-                try
+                lock (this)
                 {
-                    asyncResultSet = result;
-                    currentBindingExpression.UpdateSource();
-                }
-                finally
-                {
-                    asyncResultSet = null;
+                    try
+                    {
+                        asyncResultSet = result;
+                        currentBindingExpression.UpdateSource();
+                    }
+                    finally
+                    {
+                        asyncResultSet = null;
+                    }
                 }
             }
+            // Если байндинг отсоединился пока нас вызывали - ничего не делаем, ошибку уже сохранили в OnAsyncError
         }
 
         /// <summary>
