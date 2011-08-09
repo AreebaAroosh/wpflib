@@ -702,18 +702,5 @@ namespace WPFLib.DataWrapper
         #endregion
 
         public System.Globalization.CultureInfo CurrentThread { get; set; }
-
-
-        public IObservable<Unit> Trigger
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
     }
 }
