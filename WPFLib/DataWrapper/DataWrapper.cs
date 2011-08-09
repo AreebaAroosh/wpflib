@@ -30,7 +30,7 @@ namespace WPFLib.DataWrapper
         }
     }
 
-    class FuncValueConverter : IValueConverter
+    public class FuncValueConverter : IValueConverter
     {
         public Func<object, object> Convert { get; set; }
         public Func<object, object> ConvertBack { get; set; }

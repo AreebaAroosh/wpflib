@@ -43,10 +43,13 @@ namespace WPFLib.DataWrapper
         //}
     }
 
-    public interface IDataWrapper : IValidationWrapper, IAccessUnit
+    public interface IDataWrapper : IAccessUnit
     {
+        string Id { get; }
+
         bool IsAttached { get; }
 
+        void AddRule(Func<ValidationResult> validator);
         void AddAsyncRule(Func<CancellationToken, ValidationResult> validator);
 
         ObservableCollection<IDataWrapper> Dependent { get; }
@@ -70,5 +73,10 @@ namespace WPFLib.DataWrapper
         /// Все дочерние врапперы на один уровень
         /// </summary>
         ObservableCollection<IDataWrapper> Children { get; }
+
+        ReadOnlyObservableCollection<ValidationRule> Rules { get; }
+
+        void OnBeforeAttach(Binding binding, DependencyObject target, DependencyProperty property);
+        void OnAfterAttach(BindingExpressionBase bindingExpression);
     }
 }
