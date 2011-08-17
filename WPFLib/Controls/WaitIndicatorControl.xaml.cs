@@ -53,6 +53,43 @@ namespace WPFLib
         }
         #endregion
 
+
+        private static readonly DependencyPropertyKey TextVisibilityPropertyKey = DependencyProperty.RegisterReadOnly("TextVisibility", typeof(Visibility), typeof(WaitIndicatorControl), new UIPropertyMetadata() { DefaultValue = Visibility.Collapsed });
+        public static readonly DependencyProperty TextVisibilityProperty = TextVisibilityPropertyKey.DependencyProperty;
+        public Visibility TextVisibility
+        {
+            get { return (Visibility)GetValue(TextVisibilityProperty); }
+            private set { SetValue(TextVisibilityPropertyKey, value); }
+        }
+
+        public static readonly DependencyProperty TextProperty = DependencyProperty.Register("Text", typeof(string), typeof(WaitIndicatorControl), new UIPropertyMetadata() { PropertyChangedCallback = new PropertyChangedCallback(OnTextChanged) });
+        public string Text
+        {
+            get { return (string)GetValue(TextProperty); }
+            set { SetValue(TextProperty, value); }
+        }
+
+        #region OnTextChanged
+        private static void OnTextChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+        {
+            WaitIndicatorControl control = o as WaitIndicatorControl;
+            if (control != null)
+                control.OnTextChanged((string)e.OldValue, (string)e.NewValue);
+        }
+
+        protected virtual void OnTextChanged(string oldValue, string newValue)
+        {
+            if (String.IsNullOrEmpty(newValue))
+            {
+                TextVisibility = System.Windows.Visibility.Collapsed;
+            }
+            else
+            {
+                TextVisibility = System.Windows.Visibility.Visible;
+            }
+        }
+        #endregion
+
         private void RefreshStrokeBrush()
         {
             foreach (var el in m_ellipseArray)
@@ -80,7 +117,8 @@ namespace WPFLib
         {
             InitializeComponent();
 
-            UserControl.VisibilityProperty.AddValueChangedWeak(this, VisibilityChanged);
+            var pd = DependencyPropertyDescriptor.FromProperty(UserControl.VisibilityProperty, typeof(UserControl));
+            pd.AddValueChanged(this, VisibilityChanged);
 
             IndicatorStoryboard = this.FindResource("IndicatorStoryboard") as Storyboard;
             IndicatorStoryboard.Completed += new EventHandler(IndicatorStoryboard_Completed);
@@ -148,8 +186,6 @@ namespace WPFLib
         #region Public Functions
         public void Start()
         {
-            if (WPFHelper.IsInDesignMode)
-                return;
             IsStart = true;
             try
             {
