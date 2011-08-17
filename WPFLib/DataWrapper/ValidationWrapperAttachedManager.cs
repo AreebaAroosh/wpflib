@@ -10,23 +10,13 @@ namespace WPFLib.DataWrapper
 {
     internal class ValidationWrapperAttachedManager
     {
-        public static readonly DependencyProperty InternalValueProperty = DependencyProperty.RegisterAttached("InternalValue", typeof(object), typeof(ValidationWrapperAttachedManager), new FrameworkPropertyMetadata());
-
-        public static void SetInternalValue(DependencyObject obj, object value)
-        {
-            obj.SetValue(InternalValueProperty, value);
-        }
-
-        public static object GetInternalValue(DependencyObject obj)
-        {
-            return (object)obj.GetValue(InternalValueProperty);
-        }
-
         FrameworkElement TargetElement;
+        DependencyProperty TargetInternalValue;
 
         public ValidationWrapperAttachedManager(string wrapperName,
-                    FrameworkElement _targetElement)
+                    FrameworkElement _targetElement, DependencyProperty targetInternalValue)
         {
+            TargetInternalValue = targetInternalValue;
             TargetElement = _targetElement;
             WrapperName = wrapperName;
             InitialDataContextCheck();
@@ -50,12 +40,12 @@ namespace WPFLib.DataWrapper
             {
                 var wrapper = obj.GetValidationWrapper(WrapperName);
 
-                var expr = BindingOperations.GetBindingExpressionBase(TargetElement, InternalValueProperty);
+                var expr = BindingOperations.GetBindingExpressionBase(TargetElement, TargetInternalValue);
                 if (expr != null)
                 {
                     // Скорее всего свойство уже прицеплено к врапперу
                     // Отсоединяем байндинг
-                    BindingOperations.ClearBinding(TargetElement, InternalValueProperty);
+                    BindingOperations.ClearBinding(TargetElement, TargetInternalValue);
 
                     // Очищаем ошибки при смене контекста
                     // иначе они не обнулятся, тк правила валидации уже могут быть другими
@@ -65,14 +55,14 @@ namespace WPFLib.DataWrapper
                 var b = new Binding();
                 b.Source = new object();
 
-                wrapper.OnBeforeAttach(b, TargetElement, InternalValueProperty);
-                var bindingExpr = BindingOperations.SetBinding(TargetElement, InternalValueProperty, b);
+                wrapper.OnBeforeAttach(b, TargetElement, TargetInternalValue);
+                var bindingExpr = BindingOperations.SetBinding(TargetElement, TargetInternalValue, b);
                 wrapper.OnAfterAttach(bindingExpr);
             }
             else
             {
                 // Если контекст не то что мы ждем, отсоединяем все что может быть прицеплено
-                BindingOperations.ClearBinding(TargetElement, InternalValueProperty);
+                BindingOperations.ClearBinding(TargetElement, TargetInternalValue);
             }
         }
     }
