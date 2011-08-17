@@ -70,6 +70,24 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <Style x:Key="ListBoxBindingValidation" TargetType="{x:Type ListBox}" BasedOn="{StaticResource {x:Type ListBox}}">
+        <Style.Triggers>
+            <Trigger Property="Validation.HasError" Value="True">
+                <Setter Property="ToolTip">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource ValidationErrorsMultiConverter}">
+                            <Binding RelativeSource="{RelativeSource Self}" Path="(Validation.Errors)"/>
+                            <Binding RelativeSource="{RelativeSource Self}" Path="(Validation.Errors).Count"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="ToolTipService.InitialShowDelay" Value="1"/>
+                <Setter Property="ToolTipService.BetweenShowDelay" Value="1"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="TextBoxBindingValidation" TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
         <Style.Triggers>
             <Trigger Property="Validation.HasError" Value="True">

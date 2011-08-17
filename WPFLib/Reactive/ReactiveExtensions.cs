@@ -13,11 +13,72 @@ using System.Linq.Expressions;
 using WPFLib.Reactive;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Collections.Specialized;
 
 namespace System
 {
     public static class ReactiveExtensions
     {
+        public static IObservable<T> MergeLive<T>(this IEnumerable<IObservable<T>> source)
+        {
+            var collChanged = source as INotifyCollectionChanged;
+            if (collChanged == null)
+            {
+                throw new Exception("source must be INotifyCollectionChanged");
+            }
+            return Observable.Create<T>((observer) =>
+            {
+                var subscriptions = new Dictionary<IObservable<T>, IDisposable>();
+                foreach (var el in source)
+                    subscriptions[el] = el.Subscribe(observer.OnNext);
+                collChanged.CollectionChanged += (sender, args) =>
+                {
+                    switch (args.Action)
+                    {
+                        case NotifyCollectionChangedAction.Add:
+                            foreach (IObservable<T> item in args.NewItems)
+                            {
+                                if (!subscriptions.ContainsKey(item))
+                                {
+                                    subscriptions[item] = item.Subscribe(observer.OnNext);
+                                }
+                            }
+                            break;
+                        case NotifyCollectionChangedAction.Move:
+                            break;
+                        case NotifyCollectionChangedAction.Remove:
+                            foreach (IObservable<T> item in args.OldItems)
+                            {
+                                IDisposable subs;
+                                if (subscriptions.TryGetValue(item, out subs))
+                                {
+                                    subs.Dispose();
+                                    subscriptions.Remove(item);
+                                }
+                            }
+                            break;
+                        case NotifyCollectionChangedAction.Replace:
+                            break;
+                        case NotifyCollectionChangedAction.Reset:
+                            foreach (var sb in subscriptions.Values)
+                                sb.Dispose();
+                            subscriptions.Clear();
+                            break;
+                        default:
+                            break;
+                    }
+                };
+                return () =>
+                {
+                    foreach (var sb in subscriptions.Values)
+                        sb.Dispose();
+                    subscriptions.Clear();
+                };
+            }
+            );
+        }
+
+
         public static IObservable<Unit> ToUnit<T>(this IObservable<T> source)
         {
             return source.Select(v => new Unit());
