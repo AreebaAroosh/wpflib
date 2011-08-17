@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Threading.Tasks;
 using System.Threading;
+using WPFLib.Contracts;
 
 namespace WPFLib.Controls
 {
@@ -20,9 +21,16 @@ namespace WPFLib.Controls
 	/// </summary>
 	public partial class WaitWindow : Window
 	{
-		public static Task Wait(Action action)
+		public static Task Wait(Action action, bool addDefaultErrorHandler)
 		{
-			return Wait(Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default), null);
+			var errorAction = addDefaultErrorHandler ? (Action<Exception>) ProcessError : null;
+			return Wait(Task.Factory.StartNew(action, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default), errorAction);
+		}
+
+		private static void ProcessError(Exception error)
+		{
+			if (error != null)
+				error.Resolve<IDialogService>().ErrorMessage(error);
 		}
 
 		public static Task Wait(Action action, Action<Exception> errorAction)
@@ -50,7 +58,7 @@ namespace WPFLib.Controls
 				runText.Text = text;
 		}
 
-		public static Task Wait(Task task, Action<Exception> errorAction)
+		private static Task Wait(Task task, Action<Exception> errorAction)
 		{
 			var w = new WaitWindow();
 			//if (Application.Current != null && Application.Current.MainWindow != null)
