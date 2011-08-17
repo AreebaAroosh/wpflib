@@ -31,6 +31,9 @@ namespace WPFLib.DataWrapper
 
         ReadOnlyObservableCollection<ValidationRule> Rules { get; }
 
+        bool IsAttached { get; }
+        IEnumerable<ValidationError> Validate();
+
         void OnBeforeAttach(Binding binding, DependencyObject target, DependencyProperty property);
         void OnAfterAttach(BindingExpressionBase bindingExpression);
     }
