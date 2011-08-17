@@ -9,6 +9,7 @@
             </MenuItem>
             <MenuItem Header="Technologies">
                 <MenuItem Header="DataWrapper" Tag="DataWrapperDemoControl"/>
+                <MenuItem Header="ValidationWrapper" Tag="ValidationWrapperDemoControl"/>
             </MenuItem>
         </Menu>
         <ContentControl DockPanel.Dock="Top" x:Name="MainContent"/>
