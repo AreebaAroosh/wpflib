@@ -32,6 +32,12 @@ namespace WPFLib.DataWrapper
 
     public class FuncValueConverter : IValueConverter
     {
+        public FuncValueConverter(Func<object, object> convert = null, Func<object, object> convertBack = null)
+        {
+            this.Convert = convert;
+            this.ConvertBack = convertBack;
+        }
+
         public Func<object, object> Convert { get; set; }
         public Func<object, object> ConvertBack { get; set; }
 
@@ -490,13 +496,27 @@ namespace WPFLib.DataWrapper
 
         void OnTargetUpdated(object sender, RoutedEventArgs args)
         {
-            ValidateDependent();
-            //ValidateParent();
+            if (!IsAttached)
+            {
+                UnsubscribeOnError();
+            }
+            else
+            {
+                ValidateDependent();
+                //ValidateParent();
+            }
         }
 
         void OnSourceUpdated(object sender, RoutedEventArgs args)
         {
-            ValidateDependent();
+            if (!IsAttached)
+            {
+                UnsubscribeOnError();
+            }
+            else
+            {
+                ValidateDependent();
+            }
         }
 
         protected void ValidateDependent()
@@ -542,16 +562,6 @@ namespace WPFLib.DataWrapper
         BindingExpressionBase currentBindingExpression = null;
         DependencyObject currentTargetObject;
         DependencyProperty currentTargetProperty;
-
-        //public void AddValidator(Func<T, ValidationResult> func)
-        //{
-        //    this.AddRule(new DelegateValidationRule<T>(func));
-        //}
-
-        //public void AddValidatorRawValue(Func<T, ValidationResult> func)
-        //{
-        //    this.AddRule(new DelegateValidationRule<T>(func) { ValidationStep = ValidationStep.RawProposedValue });
-        //}
 
         public void UpdateSource()
         {
