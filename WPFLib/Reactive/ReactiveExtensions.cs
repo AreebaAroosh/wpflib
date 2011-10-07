@@ -19,6 +19,27 @@ namespace System
 {
     public static class ReactiveExtensions
     {
+        public static IObservable<T> NotNull<T>(this IObservable<T> source)
+        {
+            return source.Where(v => v != null);
+        }
+
+        public static IObservable<IEvent<PropertyChangedEventArgs>> PropertyChangedObservable(this DependencyProperty property, DependencyObject source)
+        {
+            var weakSource = new WeakReference(source);
+            return Observable.Create<IEvent<PropertyChangedEventArgs>>((observer) =>
+            {
+                if (!weakSource.IsAlive)
+                    throw new InvalidOperationException("Source is collected!");
+                var subscription = property.AddValueChangedWeak((DependencyObject)weakSource.Target, (s, args) =>
+                {
+                    var ev = Event.Create(weakSource.Target, new PropertyChangedEventArgs(property.Name));
+                    observer.OnNext(ev);
+                });
+                return () => subscription.Dispose();
+            });
+        }
+
         public static IObservable<T> MergeLive<T>(this IEnumerable<IObservable<T>> source)
         {
             var collChanged = source as INotifyCollectionChanged;
@@ -77,7 +98,6 @@ namespace System
             }
             );
         }
-
 
         public static IObservable<Unit> ToUnit<T>(this IObservable<T> source)
         {
@@ -146,12 +166,60 @@ namespace System
 
         public static IObservable<TValue> ToObservableStream<T, TValue>(this T source, Expression<Func<T, TValue>> property)
         {
-            return Observable2.FromPropertyChangedPattern(source, property, true);
+            return source.ToObservable(property, true);
         }
 
-        public static IObservable<TValue> ToObservable<T, TValue>(this T source, Expression<Func<T, TValue>> property)
+        public static IObservable<TValue> ToObservable<T, TValue>(this T source, Expression<Func<T, TValue>> property, bool initialPump = false)
         {
-            return Observable2.FromPropertyChangedPattern(source, property);
+            var compile = new Lazy<Func<T, TValue>>(
+                property.Compile,
+                isThreadSafe: false); // Rx ensures that it's thread-safe
+
+            var getter = compile.Value;
+
+            var weakSource = new WeakReference(source);
+            Func<TValue> weakGetter = () =>
+            {
+                if (weakSource.IsAlive)
+                {
+                    return getter((T)weakSource.Target);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Source is collected!");
+                }
+            };
+            var propertyInfo = property.GetPropertyInfo();
+
+            var notifies = source as INotifyPropertyChanged;
+
+            IObservable<TValue> result = null;
+
+            if (notifies != null)
+            {
+                result =
+                    Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+                        eh => eh.Invoke,
+                        eh => notifies.PropertyChanged += eh,
+                        eh => notifies.PropertyChanged -= eh)
+                        .Where(ev => ev.EventArgs.PropertyName == propertyInfo.Name).Select(ev => weakGetter());
+            }
+            else if (source is DependencyObject)
+            {
+                var obj = source as DependencyObject;
+                var propertyDescriptor = TypeDescriptor.GetProperties(source).Cast<PropertyDescriptor>().Where(pd => pd.Name == propertyInfo.Name).Single();
+                var dependencyPropertyDescriptor = DependencyPropertyDescriptor.FromProperty(propertyDescriptor);
+                result = dependencyPropertyDescriptor.DependencyProperty.PropertyChangedObservable(obj).Select(ev => weakGetter());
+            }
+            else
+            {
+                throw new Exception(String.Format("Can not observe property {0} on {1}", propertyInfo.Name, source.GetType()));
+            }
+            if (initialPump)
+            {
+                return Observable.Return(getter(source)).Merge(result);
+            }
+            return result;
         }
 
         /// <summary>
@@ -163,7 +231,7 @@ namespace System
         /// <returns></returns>
         public static IObservable<IList<TSource>> BufferWithTimeAfterValue<TSource>(this IObservable<TSource> source, TimeSpan timeSpan)
         {
-            return source.BufferWithTimeAfterValue(timeSpan, Scheduler.TaskPool);
+            return source.BufferWithTimeAfterValue(timeSpan, Scheduler.Immediate);
         }
 
         /// <summary>
@@ -177,7 +245,7 @@ namespace System
         public static IObservable<IList<TSource>> BufferWithTimeAfterValue<TSource>(this IObservable<TSource> source, TimeSpan timeSpan, IScheduler scheduler)
         {
             var closing = source.Delay(timeSpan);
-            return source.Window(() => closing)
+            return source.Window(() => closing, scheduler)
                 .SelectMany<IObservable<TSource>, IList<TSource>>(new Func<IObservable<TSource>, IObservable<IList<TSource>>>(Observable.ToList<TSource>));
         }
 
@@ -239,18 +307,20 @@ namespace System
             return source.Subscribe((e) => { onNext(); });
         }
 
-        public static IObservable<object> DataContextObservable(this FrameworkElement element)
+        public static IDisposable Subscribe<TSource>(this IObservable<IEvent<TSource>> source, Action<object, TSource> onNext)
+            where TSource : EventArgs
         {
-            var initialContext = Observable.Create<object>((observer) => 
-            {
-                if (element.DataContext != null)
-                {
-                    observer.OnNext(element.DataContext);
-                }
-                observer.OnCompleted();
-                return () => { };
-            });
-            return initialContext.Concat(element.DataContextChangedObservable().Select(e => element.DataContext));
+            return source.Subscribe(ev => { onNext(ev.Sender, ev.EventArgs); });
+        }
+
+        public static IObservable<IEvent<PropertyChangedEventArgs>> PropertyChangedObservable(this INotifyPropertyChanged source)
+        {
+            return Observable.FromEvent<PropertyChangedEventArgs>(source, "PropertyChanged");
+        }
+
+        public static IObservable<IEvent<PropertyChangedEventArgs>> PropertyChangedObservable(this INotifyPropertyChanged source, string propertyName)
+        {
+            return Observable.FromEvent<PropertyChangedEventArgs>(source, "PropertyChanged").Where(e => e.EventArgs.PropertyName == propertyName);
         }
     }
 }

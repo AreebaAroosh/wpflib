@@ -10,6 +10,7 @@ using System.Text;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Threading;
 
 namespace WPFLib.Misc
 {
@@ -250,11 +251,11 @@ namespace WPFLib.Misc
         {
         }
 
-        public PropertyChangeNotifier(DependencyObject propertySource, PropertyPath property) 
+        public PropertyChangeNotifier(DependencyObject propertySource, PropertyPath property)
             : this(propertySource, property, PinToSourceDefault)
         {
         }
-        
+
         public PropertyChangeNotifier(DependencyObject propertySource, string path, bool pinToSource)
             : this(propertySource, new PropertyPath(path), pinToSource)
         {
@@ -402,8 +403,21 @@ namespace WPFLib.Misc
         {
             if (pinnedToSource && PropertySource != null)
             {
-                UnPin(PropertySource);
+                var dispObj = PropertySource as DispatcherObject;
+                if (dispObj != null && !dispObj.Dispatcher.CheckAccess())
+                {
+                    dispObj.Dispatcher.BeginInvoke((Action)(() => DisposeImpl()), DispatcherPriority.Send);
+                }
+                else
+                {
+                    DisposeImpl();
+                }
             }
+        }
+
+        void DisposeImpl()
+        {
+            UnPin(PropertySource);
             BindingOperations.ClearBinding(this, ValueProperty);
         }
         #endregion
@@ -444,16 +458,18 @@ namespace WPFLib.Misc
     /// </example>
     public static class EventHandlerUtils
     {
-        public static void AddValueChangedWeak(this DependencyProperty prop, DependencyObject component, EventHandler handler)
+        public static IDisposable AddValueChangedWeak(this DependencyProperty prop, DependencyObject component, EventHandler handler)
         {
-            var not = new PropertyChangeNotifier(component as DependencyObject, prop);
+            var not = new PropertyChangeNotifier(component, prop);
             not.ValueChanged += handler;
+            return not;
         }
 
-        public static void AddValueChangedWeak(this DependencyPropertyDescriptor dpd, DependencyObject component, EventHandler handler)
+        public static IDisposable AddValueChangedWeak(this DependencyPropertyDescriptor dpd, DependencyObject component, EventHandler handler)
         {
-            var not = new PropertyChangeNotifier(component as DependencyObject, dpd.DependencyProperty);
+            var not = new PropertyChangeNotifier(component, dpd.DependencyProperty);
             not.ValueChanged += handler;
+            return not;
         }
 
         #region EventHandler<E> extensions

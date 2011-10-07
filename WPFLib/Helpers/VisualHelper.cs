@@ -9,17 +9,32 @@ namespace WPFLib
 {
     public static class VisualHelper
     {
+        /// <summary>
+        /// Все дочерние элементы включая obj
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static IEnumerable<DependencyObject> GetFullTree(DependencyObject obj)
+        {
+            yield return obj;
+            foreach (var child in FindVisualChildrenOneLevel(obj))
+            {
+                foreach (var item in GetFullTree(child))
+                    yield return item;
+            }
+        }
+
         public static DependencyObject GetAncestorByType(DependencyObject element, Type type)
         {
             if (element == null) return null;
-			if (type.IsAssignableFrom(element.GetType())) return element;
+            if (element.GetType() == type) return element;
             return GetAncestorByType(VisualTreeHelper.GetParent(element), type);
         }
 
-        public static T FindVisualAncestor<T>(DependencyObject element) where T : DependencyObject
+        public static T FindVisualAncestor<T>(DependencyObject element) where T : class
         {
             if (element == null) return null;
-            if (element is T) return (T)element;
+            if (element is T) return (T)(object)element;
             return FindVisualAncestor<T>(VisualTreeHelper.GetParent(element));
         }
 
@@ -66,6 +81,14 @@ namespace WPFLib
                     yield return (T)child;
             }
             //            yield return null;
+        }
+
+        public static IEnumerable<DependencyObject> FindVisualChildrenOneLevel(DependencyObject obj)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                yield return VisualTreeHelper.GetChild(obj, i);
+            }
         }
     }
 }
