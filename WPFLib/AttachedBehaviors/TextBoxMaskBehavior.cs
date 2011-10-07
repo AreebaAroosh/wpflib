@@ -16,6 +16,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Globalization;
+using System.Windows.Input;
 
 /*
  * This file is the part of Rubenhak.Common.WPF library.
@@ -120,6 +121,7 @@ namespace WPFLib
             if (e.OldValue is TextBox)
             {
                 (e.OldValue as TextBox).PreviewTextInput -= TextBox_PreviewTextInput;
+                (e.OldValue as TextBox).PreviewKeyDown -= TextBox_PreviewKeyDown;
                 DataObject.RemovePastingHandler((e.OldValue as TextBox), (DataObjectPastingEventHandler)TextBoxPastingEventHandler);
             }
 
@@ -130,10 +132,61 @@ namespace WPFLib
             if ((NumericType)e.NewValue != NumericType.Any)
             {
                 _this.PreviewTextInput += TextBox_PreviewTextInput;
+                _this.PreviewKeyDown += TextBox_PreviewKeyDown;
+                _this.KeyDown += new KeyEventHandler(_this_KeyDown);
                 DataObject.AddPastingHandler(_this, (DataObjectPastingEventHandler)TextBoxPastingEventHandler);
             }
 
             ValidateTextBox(_this);
+        }
+
+        static void _this_KeyDown(object sender, KeyEventArgs e)
+        {
+            
+        }
+
+        static void TextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            // Делаем обработку Del и BackSpace, тк они не вызывают TextInput
+            // значение идет сразу дальше
+            // Потом проверяем строку на равенство "-"
+            TextBox _this = (sender as TextBox);
+            if (e.Key == Key.Delete || e.Key == Key.Back)
+            {
+                string text = _this.Text;
+                var selectionLength = _this.SelectionLength;
+                if (!String.IsNullOrEmpty(text))
+                {
+                    int caret = _this.CaretIndex;
+                    if (_this.SelectionLength > 0)
+                    {
+                        text = text.Substring(0, _this.SelectionStart) + _this.Text.Substring(_this.SelectionStart + _this.SelectionLength);
+                        caret = _this.SelectionStart;
+                    }
+                    else
+                    {
+                        if (e.Key == Key.Delete && caret < text.Length)
+                        {
+                            text = _this.Text.Substring(0, caret) + _this.Text.Substring(caret + 1);
+                        }
+                        else if (e.Key == Key.Back && caret > 0)
+                        {
+                            text = _this.Text.Substring(0, caret - 1) + _this.Text.Substring(caret);
+                            caret--;
+                        }
+                    }
+                    if (text == NumberFormatInfo.CurrentInfo.NegativeSign)
+                    {
+                        text = NumberFormatInfo.CurrentInfo.NegativeSign + "0";
+                        caret = 1;
+                        selectionLength = 1;
+                    }
+                    _this.Text = text;
+                    _this.CaretIndex = caret;
+                    _this.SelectionLength = selectionLength;
+                }
+                e.Handled = true;
+            }
         }
 
         #endregion
@@ -179,6 +232,11 @@ namespace WPFLib
             e.Handled = !isValid;
             if (isValid)
             {
+                if (_this.Text.StartsWith(NumberFormatInfo.CurrentInfo.NegativeSign) && _this.CaretIndex < NumberFormatInfo.CurrentInfo.NegativeSign.Length && _this.SelectionLength == 0)
+                {
+                    e.Handled = true;
+                    return;
+                }
                 int caret = _this.CaretIndex;
                 string text = _this.Text;
                 bool textInserted = false;
@@ -226,7 +284,7 @@ namespace WPFLib
                         caret++;
                     }
                 }
-                else if (e.Text == NumberFormatInfo.CurrentInfo.NegativeSign)
+                else if (e.Text == NumberFormatInfo.CurrentInfo.NegativeSign && selectionLength < text.Length)
                 {
                     textInserted = true;
                     if (_this.Text.Contains(NumberFormatInfo.CurrentInfo.NegativeSign))
@@ -252,7 +310,17 @@ namespace WPFLib
 
                 try
                 {
-                    double val = Convert.ToDouble(text);
+                    double val = 0;
+                    if (text == NumberFormatInfo.CurrentInfo.NegativeSign)
+                    {
+                        text = NumberFormatInfo.CurrentInfo.NegativeSign + "0";
+                        caret = 1;
+                        selectionLength = 1;
+                    }
+                    if (!String.IsNullOrEmpty(text))
+                    {
+                        val = Convert.ToDouble(text);
+                    }
                     double newVal = ValidateLimits(GetMinimumValue(_this), GetMaximumValue(_this), val);
                     if (val != newVal)
                     {
@@ -260,8 +328,8 @@ namespace WPFLib
                     }
                     else if (val == 0)
                     {
-                        if (!text.Contains(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator))
-                            text = "0";
+                        //if (!text.Contains(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator))
+                        //    text = "0";
                     }
                 }
                 catch
