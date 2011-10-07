@@ -259,6 +259,8 @@
     <Compile Include="EF\LazyLoading.cs" />
     <Compile Include="EntityFramework\ContextHelper.cs" />
     <Compile Include="Helpers\DispatcherHelper.cs" />
+    <Compile Include="Helpers\DispatcherObjectHelper.cs" />
+    <Compile Include="Helpers\DisposeHelper.cs" />
     <Compile Include="Helpers\TaskHelper.cs" />
     <Compile Include="MainWindow\AppMgr.cs" />
     <Compile Include="MainWindow\IApplication.cs" />
