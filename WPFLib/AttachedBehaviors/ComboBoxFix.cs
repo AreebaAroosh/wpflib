@@ -36,16 +36,44 @@ namespace WPFLib
 
         static void comboBox_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
+            // Решаем проблему не атомарности изменения SelectedItem и ItemsSource
+            // По крайней мере может сначала поменяться ItemsSource ->
+            // при этом SelectedItem может перейти в null и записаться в DataContext
+
             var comboBox = sender as ComboBox;
 
             var selectedValueBinding = BindingOperations.GetBinding(comboBox, ComboBox.SelectedValueProperty);
             var itemsSourceBinding = BindingOperations.GetBinding(comboBox, ComboBox.ItemsSourceProperty);
             if (selectedValueBinding == null || itemsSourceBinding == null)
+            {
+                // Если ItemsSource и SelectedItem одновременно не имеют байндинга - нам делать нечего
                 return;
+            }
 
+            // Получаем байндинг который сейчас стоит на SelectedValue
             var b = BindingOperations.GetBinding(comboBox, ComboBox.SelectedValueProperty);
+
+            // Очищаем байндинг на SelectedValue, для предотвращения неверного значения в DataContext
             BindingOperations.ClearBinding(comboBox, ComboBox.SelectedValueProperty);
-            comboBox.Dispatcher.BeginInvoke((Action)(() => { comboBox.SetBinding(ComboBox.SelectedValueProperty, b.Clone()); }));
+            // Запускаем отложенную установку нового байндинга
+            comboBox.Dispatcher.BeginInvoke((Action)(() =>
+            {
+                // ItemsSource уже изменился, нам остается вернуть байндинг
+
+                var newBinding = BindingOperations.GetBinding(comboBox, ComboBox.SelectedValueProperty);
+                if (newBinding == null)
+                {
+                    // Если SelectedValue никто не трогал, установим ему байндинг как был раньше
+                    comboBox.SetBinding(ComboBox.SelectedValueProperty, b.Clone());
+                }
+                else
+                {
+                    // Если же кто-то после нашей очистки установил новый байндинг(дата враппер например)
+                    // Переустановим его, для того что бы SelectedValue правильно отобразился
+                    // иначе он может быть пустым если ItemsSource был изменен после изменения SelectedValue
+                    comboBox.SetBinding(ComboBox.SelectedValueProperty, newBinding.Clone());
+                }
+            }));
         }
     }
 }
