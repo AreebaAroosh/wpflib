@@ -12,7 +12,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
 
-namespace WPFLib.Misc
+namespace WPFLib
 {
     #region Types
 

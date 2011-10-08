@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Threading;
 using System.Concurrency;
 using WPFLib.Misc;
+using WPFLib;
 using System.Disposables;
 using System.Reflection;
 using System.ComponentModel;

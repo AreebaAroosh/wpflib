@@ -7,6 +7,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Controls;
 using System.Collections.Specialized;
 using System.Windows.Data;
+using System.Windows.Documents;
 
 namespace WPFLib
 {
@@ -20,7 +21,7 @@ namespace WPFLib
         {
             get { return (bool)GetValue(ThrowTabItemVisualsProperty); }
             set { SetValue(ThrowTabItemVisualsProperty, value); }
-        }  
+        }
 
         private Panel _itemsHolder = null;
 
@@ -53,7 +54,7 @@ namespace WPFLib
             if (WPFHelper.IsInDesignMode || ThrowTabItemVisuals)
                 return;
             base.OnApplyTemplate();
-            _itemsHolder = new Grid(); //FIXME надо перебрасывать TemplateBinding из ContentPresenter'а в наш грид
+            _itemsHolder = new Grid() { Name = "PART_ItemsHolder" }; //FIXME надо перебрасывать TemplateBinding из ContentPresenter'а в наш грид
             var cp = GetTemplateChild("PART_SelectedContentHost") as ContentPresenter;
             var holder = VisualHelper.FindVisualAncestor<Decorator>(cp);
             holder.Child = _itemsHolder;
@@ -91,7 +92,7 @@ namespace WPFLib
                     {
                         foreach (var item in e.OldItems)
                         {
-                            ContentPresenter cp = FindChildContentPresenter(item);
+                            var cp = FindChildContentPresenter(item);
                             if (cp != null)
                             {
                                 _itemsHolder.Children.Remove(cp);
@@ -107,7 +108,6 @@ namespace WPFLib
 
                 case NotifyCollectionChangedAction.Replace:
                     throw new NotImplementedException("Replace not implemented yet");
-                    break;
             }
         }
 
@@ -132,16 +132,54 @@ namespace WPFLib
             }
 
             // generate a ContentPresenter if necessary
-            TabItem item = GetSelectedTabItem();
+            TabItem item = (TabItem)ItemContainerGenerator.ContainerFromItem(this.SelectedItem);
+
             if (item != null)
             {
-                CreateChildContentPresenter(item);
+                CreateChildContentPresenter(this.SelectedItem);
             }
 
             // show the right child
-            foreach (ContentPresenter child in _itemsHolder.Children)
+            foreach (AdornerDecorator decorator in _itemsHolder.Children)
             {
-                child.Visibility = ((child.Tag as TabItem).IsSelected) ? Visibility.Visible : Visibility.Collapsed;
+                var child = (ContentPresenter)decorator.Child;
+                decorator.Visibility = ((child.Tag as TabItem).IsSelected) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        void OnTabItemVisibilityChanged(object sender, EventArgs e)
+        {
+            // Если текущий таб скрыли
+            // сделаем текущим следующий, или же если его нет то предыдущий видимый таб
+            var selectedTab = GetSelectedTabItem();
+            if (selectedTab != null)
+            {
+                if (selectedTab.Visibility != System.Windows.Visibility.Visible)
+                {
+                    var nextItems = this.Items
+                        .Cast<object>()
+                        .Select(item => (TabItem)this.ItemContainerGenerator.ContainerFromItem(item))
+                        .SkipWhile(tab => tab != selectedTab)
+                        .Skip(1);
+
+                    var prevItems = this.Items
+                        .Cast<object>()
+                        .Reverse()
+                        .Select(item => (TabItem)this.ItemContainerGenerator.ContainerFromItem(item))
+                        .SkipWhile(tab => tab != selectedTab)
+                        .Skip(1);
+
+                    var items = nextItems.Concat(prevItems);
+                    foreach (var nextItem in items)
+                    {
+                        if (nextItem.Visibility == System.Windows.Visibility.Visible)
+                        {
+                            nextItem.IsSelected = true;
+                            return;
+                        }
+                    }
+                    this.SelectedItem = null;
+                }
             }
         }
 
@@ -150,30 +188,38 @@ namespace WPFLib
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        ContentPresenter CreateChildContentPresenter(object item)
+        AdornerDecorator CreateChildContentPresenter(object item)
         {
             if (item == null)
             {
                 return null;
             }
 
-            ContentPresenter cp = FindChildContentPresenter(item);
+            var decorator = FindChildContentPresenter(item);
 
-            if (cp != null)
+            if (decorator != null)
             {
-                return cp;
+                return decorator;
             }
 
+            var tabItem = (TabItem)this.ItemContainerGenerator.ContainerFromItem(item);
+            TabItem.VisibilityProperty.AddValueChangedWeak(tabItem, OnTabItemVisibilityChanged);
+
             // the actual child to be added.  cp.Tag is a reference to the TabItem
-            cp = new ContentPresenter();
-            cp.Content = (item is TabItem) ? (item as TabItem).Content : item;
+            var cp = new ContentPresenter();
+            cp.Content = tabItem.Content;
             cp.ContentTemplate = this.SelectedContentTemplate;
             cp.ContentTemplateSelector = this.SelectedContentTemplateSelector;
             cp.ContentStringFormat = this.SelectedContentStringFormat;
-            cp.Visibility = Visibility.Collapsed;
-            cp.Tag = (item is TabItem) ? item : (this.ItemContainerGenerator.ContainerFromItem(item));
-            _itemsHolder.Children.Add(cp);
-            return cp;
+            cp.Tag = tabItem;
+
+            decorator = new AdornerDecorator() { Child = cp };
+            decorator.Visibility = Visibility.Collapsed;
+
+            decorator.Tag = item;
+
+            _itemsHolder.Children.Add(decorator);
+            return decorator;
         }
 
         /// <summary>
@@ -181,13 +227,8 @@ namespace WPFLib
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        ContentPresenter FindChildContentPresenter(object data)
+        AdornerDecorator FindChildContentPresenter(object data)
         {
-            if (data is TabItem)
-            {
-                data = (data as TabItem).Content;
-            }
-
             if (data == null)
             {
                 return null;
@@ -198,12 +239,10 @@ namespace WPFLib
                 return null;
             }
 
-            foreach (ContentPresenter cp in _itemsHolder.Children)
+            foreach (AdornerDecorator decorator in _itemsHolder.Children)
             {
-                if (cp.Content == data)
-                {
-                    return cp;
-                }
+                if (decorator.Tag == data)
+                    return decorator;
             }
 
             return null;
