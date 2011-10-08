@@ -117,8 +117,9 @@ namespace WPFLib
         {
             InitializeComponent();
 
-            var pd = DependencyPropertyDescriptor.FromProperty(UserControl.VisibilityProperty, typeof(UserControl));
-            pd.AddValueChanged(this, VisibilityChanged);
+            UserControl.VisibilityProperty.AddValueChangedWeak(this, VisibilityChanged);
+            //var pd = DependencyPropertyDescriptor.FromProperty(UserControl.VisibilityProperty, typeof(UserControl));
+            //pd.AddValueChanged(this, VisibilityChanged);
 
             IndicatorStoryboard = this.FindResource("IndicatorStoryboard") as Storyboard;
             IndicatorStoryboard.Completed += new EventHandler(IndicatorStoryboard_Completed);
