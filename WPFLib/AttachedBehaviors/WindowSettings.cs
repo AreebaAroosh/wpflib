@@ -15,11 +15,11 @@ namespace WPFLib
     {
         public enum ModeEnum
         {
-            All,
-            Size,
-            Location,
-            State,
-            None
+            None,       // Ничего не сохраняем
+            All,        // Сохраняем все параметры
+            Size,       // Сохраняем только размер
+            Location,   // Сохраняем только позицию
+            State       // Сохраняем состояние(Maximized,Minimized)
         }
 
         #region WindowApplicationSettings Helper Class
