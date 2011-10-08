@@ -12,6 +12,7 @@ using System.Threading;
 using WPFLib.AccessUnit;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using System.Concurrency;
 
 namespace WPFLib.DataWrapper
 {
@@ -76,24 +77,6 @@ namespace WPFLib.DataWrapper
         }
     }
 
-    /// <summary>
-    /// TODO:
-    /// Реализовать поддержку правил валидации с передачей им значения к которому идет байндинг, как:
-    /// GetDataWrapper() - на вход получает Expression который возвращает значение враппера - тоесть сожержит путь к значению
-    /// по выражению получается строка идентификатор
-    /// при этом DataWrapper сможет по этому выражению получать значение
-    ///     -- не особо нужный функционал
-    /// 
-    /// вообще если в дереве враперов какое-то значение изменилось то валидацию надо вызвать на всем дереве
-    /// это можно сделать через ValidateWithoutUpdate
-    /// 
-    /// в случае если врапер в дереве приаттачен к контролу то вызывается ValidateWithoutUpdate
-    /// если же нет то он сам вызывает правила валидации беря значение из переданного выражения
-    /// 
-    /// проблема: кто увидит результаты валидации если врапер не приаттачен никуда
-    /// возможно дочерние враперы должны брать к себе правила валидации родителей и вызывать их
-    ///     -- сделано
-    /// </summary>
     internal class DataWrapperImpl : DependencyObject, IDataWrapper
     {
         ObservableCollection<Func<CancellationToken, ValidationResult>> _asyncRules;
@@ -137,8 +120,49 @@ namespace WPFLib.DataWrapper
                 return asyncResultSet;
             }
             // Запрос на валидацию
-            ValidationReq.OnNext(new Unit());
+            if (ValidationReq != null)
+            {
+                //System.Diagnostics.Debug.WriteLine("ValiationReq");
+                ValidationReq.OnNext(new Unit());
+            }
+            lock (this)
+            {
+                if (ValidationTask == null && AsyncRules.Count > 0)
+                {
+                    ValidationTask = new TaskCompletionSource<Unit>();
+                }
+            }
             return ValidationResult.ValidResult;
+        }
+
+        /// <summary>
+        /// Вызывается байндингом последним в списке правил
+        /// </summary>
+        /// <returns></returns>
+        ValidationResult OnValidationEnd()
+        {
+            //lock (this)
+            //{
+            //    if (asyncResultSet != null)
+            //    {
+            //        // Идет завершающий цикл асинхронной валидации
+            //        // валидация заканчивается
+            //        OnValidationCompleted();
+            //    }
+            //}
+            return ValidationResult.ValidResult;
+        }
+
+        /// <summary>
+        /// Асинхронная валидация завершена, завершим и таск валидации
+        /// </summary>
+        void OnValidationCompleted()
+        {
+            if (ValidationTask != null)
+            {
+                ValidationTask.SetResult(new Unit());
+                ValidationTask = null;
+            }
         }
 
         /// <summary>
@@ -146,41 +170,66 @@ namespace WPFLib.DataWrapper
         /// </summary>
         ValidationRule AsyncValidationRule;
 
+        void InitValidation()
+        {
+            AsyncValidationRule = new FuncValidationRule(OnValidationBegin) { ValidationStep = ValidationStep.RawProposedValue, ValidatesOnTargetUpdated = true };
+            rules.Add(AsyncValidationRule);
+            rules.Add(new FuncValidationRule(OnValidationEnd) { ValidationStep = ValidationStep.CommittedValue, ValidatesOnTargetUpdated = true });
+        }
+
         /// <summary>
         /// Только при наличии асинхронных правил инициализируем механизм
         /// </summary>
         void InitAsyncValidation()
         {
-            ValidationReq = new Subject<Unit>();
+            ValidationReq = new FastSubject<Unit>();
 
-            AsyncValidationRule = new FuncValidationRule(OnValidationBegin) { ValidationStep = ValidationStep.RawProposedValue, ValidatesOnTargetUpdated = true };
-            rules.Add(AsyncValidationRule);
             // Запросы на валидацию буферизуем
             ValidationReq.BufferWithTimeAfterValue(TimeSpan.FromMilliseconds(10))
+                .ObserveOn(Scheduler.ThreadPool)
                 .Subscribe(OnValidateAsync);
         }
 
         CancellationTokenSource currentAsyncToken;
         IDisposable currentAsyncSubscription;
+        IDisposable currentAsyncValidationEndSubscription;
 
         /// <summary>
         /// Производим асинхронную валидацию, вызывается после буферизации запросов на валидацию
         /// </summary>
         void OnValidateAsync()
         {
+            //System.Diagnostics.Debug.WriteLine("OnValidateAsync");
             lock (this)
             {
                 if (currentAsyncToken != null)
                 {
+                    currentAsyncValidationEndSubscription.Dispose();
                     currentAsyncSubscription.Dispose();
                     currentAsyncToken.Cancel();
                 }
                 currentAsyncToken = new CancellationTokenSource();
-                var tasks = AsyncRules.Select((r) => Task<ValidationResult>.Factory.StartNew(() => r(currentAsyncToken.Token)).ToObservable());
-                var result = tasks.Merge().Where(r => !r.IsValid).Take(1);
+                var tasks = AsyncRules.Select((r) => Task<ValidationResult>.Factory.StartNew(() => r(currentAsyncToken.Token)).ToObservable()).ToList();
+
+                var allResults = tasks.Merge();
+                currentAsyncValidationEndSubscription = allResults.Subscribe((r) => { }, OnAllAsyncValidationTasksEnd);
+
+                var result = allResults.Where(r => !r.IsValid).Take(1);
                 AsyncValidationTask = result.ToTaskLast();
                 currentAsyncSubscription = result./*ObserveOn(this.currentTargetObject.Dispatcher).*/Subscribe(OnAsyncError);
             }
+        }
+
+        /// <summary>
+        /// Завершились все таски асинхронной валидации, ошибок асинхронной валидации нет
+        /// иначе вызова не будет, он будет отменен
+        /// </summary>
+        void OnAllAsyncValidationTasksEnd()
+        {
+            //System.Diagnostics.Debug.WriteLine("OnAllAsyncValidationTasksEnd");
+
+            // Валидация завершена
+            OnValidationCompleted();
         }
 
         Task<ValidationResult> AsyncValidationTask;
@@ -197,10 +246,18 @@ namespace WPFLib.DataWrapper
         /// <param name="result"></param>
         void OnAsyncError(ValidationResult result)
         {
+            //System.Diagnostics.Debug.WriteLine("OnAsyncError");
+
+            // Асинхронная валидация дала ошибку, отменим вызов завершения всех тасков
+            currentAsyncValidationEndSubscription.Dispose();
+
             if (LastError.Any())
             {
                 // Уже есть какая-то ошибка, не будем её менять
                 // что бы не смущать пользователя
+                OnValidationCompleted();
+                //System.Diagnostics.Debug.WriteLine("OnAsyncError LastError");
+
                 return;
             }
             // Асинхронная валидация вернула ошибку
@@ -208,9 +265,13 @@ namespace WPFLib.DataWrapper
 
             // сразу сохраним её у нас
             SetAsyncErrorExplicit(result.ErrorContent);
+            // валидация в общем закончена
+            // не будет ожидать установки ошибки в UI
+            OnValidationCompleted();
 
             if (IsAttached)
             {
+                //System.Diagnostics.Debug.WriteLine("OnAsyncError IsAttached");
                 // Байндинг ещё работает, установим ошибку в него
                 // Запустим новый цикл валидации, но обработаем его по особому
                 // Так же UpdateSource() необходимо выполнять только в UI потоке
@@ -230,8 +291,10 @@ namespace WPFLib.DataWrapper
         /// <param name="result"></param>
         void SetAsyncError(ValidationResult result)
         {
+            //System.Diagnostics.Debug.WriteLine("SetAsyncError");
             if (IsAttached)
             {
+                //System.Diagnostics.Debug.WriteLine("SetAsyncError IsAttached");
                 lock (this)
                 {
                     try
@@ -250,8 +313,9 @@ namespace WPFLib.DataWrapper
 
         /// <summary>
         /// Сигналы о начале валидации
+        /// обычный Subject 
         /// </summary>
-        Subject<Unit> ValidationReq;
+        FastSubject<Unit> ValidationReq;
 
         private void FixupParent(IDataWrapper previousValue)
         {
@@ -398,6 +462,7 @@ namespace WPFLib.DataWrapper
 
         public DataWrapperImpl(string id, IAccessUnitModeProvider _accessProvider)
         {
+            InitValidation();
             // Берем на себя ошибки родителей которые не прикреплены в UI
             AddRule(new FuncValidationRule(this.ValidateNotAttachedParent));
             accessProvider = _accessProvider;
@@ -461,7 +526,7 @@ namespace WPFLib.DataWrapper
             }
 
             UnsubscribeOnError();
-            currentTargetObject = target;
+            _currentTargetObject = new WeakReference(target);
             currentTargetProperty = property;
         }
 
@@ -560,7 +625,19 @@ namespace WPFLib.DataWrapper
             }
         }
         BindingExpressionBase currentBindingExpression = null;
-        DependencyObject currentTargetObject;
+
+        WeakReference _currentTargetObject;
+        DependencyObject currentTargetObject
+        {
+            get
+            {
+                if (_currentTargetObject != null && _currentTargetObject.IsAlive)
+                {
+                    return (DependencyObject)_currentTargetObject.Target;
+                }
+                return null;
+            }
+        }
         DependencyProperty currentTargetProperty;
 
         public void UpdateSource()
@@ -585,7 +662,8 @@ namespace WPFLib.DataWrapper
             {
                 if (!parent.IsAttached)
                 {
-                    var err = parent.Validate().FirstOrDefault();
+                    parent.Validate();
+                    var err = parent.Errors.FirstOrDefault();
                     if (err != null)
                         return new ValidationResult(false, err.ErrorContent);
                 }
@@ -598,30 +676,59 @@ namespace WPFLib.DataWrapper
             return ValidationResult.ValidResult;
         }
 
+        TaskCompletionSource<Unit> ValidationTask;
+
         /// <summary>
         /// Выполним валидацию
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<ValidationError> Validate()
+        public Task Validate()
         {
-            if (!IsAttached)
+            lock (this)
             {
-                return ValidateExplicit();
-            }
-            else
-            {
-                // Не срабатывает, байндинг умный - и лишний раз валидацию не дергает
-                // в случае же зависим
-                // а нам надо заставить его, что бы в случае чего ошибка подцепилась в UI
-                //currentBindingExpression.ValidateWithoutUpdate();
-                // только вот так
-                currentBindingExpression.UpdateSource();
-                return Errors;
+                if (ValidationTask != null)
+                {
+                    // Идет асинхронная валидация
+                    return ValidationTask.Task;
+                }
+                // Для соблюдения лучших традиций метод по идее должен быть асинхронным,
+                // тоесть запускать валидацию и все
+                // А ошибки уже должны быть синхронно доступны в Errors
+                if (!IsAttached)
+                {
+                    // пока что синхронно сделаем валидацию
+                    ValidateExplicit();
+                    var tcs = new TaskCompletionSource<Unit>();
+                    tcs.SetResult(new Unit());
+                    return tcs.Task;
+                }
+                else
+                {
+                    // байндинг умный - и лишний раз валидацию не дергает
+                    // а нам надо заставить его, что бы в случае чего ошибка подцепилась в UI
+
+                    // таким образом мы запускаем валидацию в байндинге,
+                    // но асинхронная валидация будет идти асинхронноы
+                    currentBindingExpression.UpdateSource();
+                    if (AsyncRules.Count == 0)
+                    {
+                        // Асинхронной валидации нет, все сделано
+                        var tcs = new TaskCompletionSource<Unit>();
+                        tcs.SetResult(new Unit());
+                        return tcs.Task;
+                    }
+                    // Создаем таск через который можно подождать окончания валидации
+                    ValidationTask = new TaskCompletionSource<Unit>();
+                }
+                // Ждем асинхронную валидацию
+                return ValidationTask.Task;
             }
         }
 
         protected IEnumerable<ValidationError> ValidateExplicit()
         {
+            // Метод ну учитывает асинхронные проверки
+            // работает только синхронно
             LastError.Clear();
 
             foreach (var rule in Rules)

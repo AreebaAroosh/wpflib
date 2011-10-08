@@ -52,6 +52,10 @@ namespace WPFLib.DataWrapper
 
         public void OnBeforeAttach(Binding b, DependencyObject target, DependencyProperty property)
         {
+            if (Trigger == null)
+            {
+                throw new InvalidOperationException("Trigger is mandatory");
+            }
             b.ValidatesOnExceptions = true;
             b.NotifyOnValidationError = true;
             b.NotifyOnSourceUpdated = true;
@@ -85,10 +89,7 @@ namespace WPFLib.DataWrapper
                 inp.AddHandler(Binding.TargetUpdatedEvent, (RoutedEventHandler)OnTargetUpdated);
                 inp.AddHandler(Binding.SourceUpdatedEvent, (RoutedEventHandler)OnSourceUpdated);
             }
-            if (Trigger != null)
-            {
-                TriggerSubscription = Trigger.ObserveOnDispatcher().Subscribe(OnTrigger);
-            }
+            TriggerSubscription = Trigger.Subscribe(OnTrigger);
         }
 
         void UnsubscribeOnError()
@@ -156,13 +157,13 @@ namespace WPFLib.DataWrapper
         DependencyObject currentTargetObject;
         DependencyProperty currentTargetProperty;
 
-        //public void UpdateSource()
-        //{
-        //    if (IsAttached)
-        //    {
-        //        currentBindingExpression.UpdateSource();
-        //    }
-        //}
+        public void UpdateSource()
+        {
+            if (IsAttached)
+            {
+                currentBindingExpression.UpdateSource();
+            }
+        }
 
         /// <summary>
         /// Выполним валидацию
@@ -249,18 +250,6 @@ namespace WPFLib.DataWrapper
 
         protected virtual void OnTriggerChanged(IObservable<Unit> oldValue, IObservable<Unit> newValue)
         {
-            if (currentTargetObject != null)
-            {
-                // Мы уже работаем
-                if (TriggerSubscription != null)
-                {
-                    TriggerSubscription.Dispose();
-                }
-                if(newValue != null)
-                {
-                    TriggerSubscription = newValue.ObserveOnDispatcher().Subscribe(OnTrigger);
-                }
-            }
         }
         #endregion
 

@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace WPFLib.DataWrapper
 {
@@ -31,22 +32,11 @@ namespace WPFLib.DataWrapper
 
         ReadOnlyObservableCollection<ValidationRule> Rules { get; }
 
-        bool IsAttached { get; }
-        IEnumerable<ValidationError> Validate();
-
         void OnBeforeAttach(Binding binding, DependencyObject target, DependencyProperty property);
         void OnAfterAttach(BindingExpressionBase bindingExpression);
     }
 
-    public static class DataWrapperExtensions
-    {
-        //public static void AddRule(this IDataWrapper wrapper, Func<ValidationResult> validator)
-        //{
-        //    wrapper.AddRule(new FuncValidationRule(validator));
-        //}
-    }
-
-    public interface IDataWrapper : IAccessUnit
+    public interface IDataWrapper : IAccessUnit, IValidationErrorContainer
     {
         string Id { get; }
 
@@ -62,7 +52,9 @@ namespace WPFLib.DataWrapper
         Func<object, object> ConvertBack { get; set; }
 
         bool IsValid { get; }
-        IEnumerable<ValidationError> Validate();
+
+        // Запустить валидацию
+        Task Validate();
         void UpdateSource();
 
         /// <summary>
