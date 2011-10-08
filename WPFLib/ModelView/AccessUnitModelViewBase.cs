@@ -21,17 +21,50 @@ namespace WPFLib.ModelView
         {
             IAccessUnit unit;
             Units.TryGetValue(id, out unit);
-            var command = unit as DelegateAccessUnitCommand;
-            if (command == null)
+            if (unit == null || unit is DummyAccesUnit || unit is DelegateAccessUnitCommand)
             {
-                command = CreateCommand(id, executeMethod, canExecuteMethod, hideDisabled);
+                var command = unit as DelegateAccessUnitCommand;
+                if (command == null)
+                {
+                    command = CreateCommand(id, executeMethod, canExecuteMethod, hideDisabled);
+                }
+                return command;
             }
-            return command;
+            else
+            {
+                throw new Exception(String.Format("Access unit {0} already exists", id));
+            }
+        }
+
+        protected DelegateAccessUnitCommand<T> GetCommand<T>(string id, Action<T> executeMethod, Func<T, bool> canExecuteMethod, bool hideDisabled = false)
+        {
+            IAccessUnit unit;
+            Units.TryGetValue(id, out unit);
+            if (unit == null || unit is DummyAccesUnit || unit is DelegateAccessUnitCommand<T>)
+            {
+                var command = unit as DelegateAccessUnitCommand<T>;
+                if (command == null)
+                {
+                    command = CreateCommand<T>(id, executeMethod, canExecuteMethod, hideDisabled);
+                }
+                return command;
+            }
+            else
+            {
+                throw new Exception(String.Format("Access unit {0} already exists", id));
+            }
         }
 
         DelegateAccessUnitCommand CreateCommand(string id, Action executeMethod, Func<bool> canExecuteMethod, bool hideDisabled = false)
         {
             var com = new DelegateAccessUnitCommand(this, executeMethod, canExecuteMethod) { HideDisabled = hideDisabled };
+            SetUnit(id, com);
+            return com;
+        }
+
+        DelegateAccessUnitCommand<T> CreateCommand<T>(string id, Action<T> executeMethod, Func<T, bool> canExecuteMethod, bool hideDisabled = false)
+        {
+            var com = new DelegateAccessUnitCommand<T>(this, executeMethod, canExecuteMethod) { HideDisabled = hideDisabled };
             SetUnit(id, com);
             return com;
         }
@@ -150,13 +183,17 @@ namespace WPFLib.ModelView
                 if (oldValue != value)
                 {
                     OnPropertyChanged(DefaultModeArgs);
+                    RenewAll();
                 }
             }
         }
 
         private void RenewAll()
         {
-            OnUnitModeChanged(AccessUnitProviderHelper.AllUnits);
+            foreach (var unit in Units.Values)
+            {
+                OnUnitModeChangedDirect(unit);
+            }
         }
 
         private IEnumerable<AccessUnitMode> GetAllModes(IDataWrapper wrapper)
@@ -260,12 +297,32 @@ namespace WPFLib.ModelView
             }
         }
 
+        #region DefaultUriProperty
+        public static readonly PropertyChangedEventArgs DefaultUriArgs = PropertyChangedHelper.CreateArgs<AccessUnitModelViewBase>(c => c.DefaultUri);
+        private string _DefaultUri;
+
         public string DefaultUri
         {
-            get;
-            protected set;
+            get
+            {
+                return _DefaultUri;
+            }
+            protected set
+            {
+                var oldValue = DefaultUri;
+                _DefaultUri = value;
+                if (oldValue != value)
+                {
+                    OnDefaultUriChanged(oldValue, value);
+                    OnPropertyChanged(DefaultUriArgs);
+                }
+            }
         }
 
+        protected virtual void OnDefaultUriChanged(string oldValue, string newValue)
+        {
+        }
+        #endregion
 
         Dictionary<string, IValidationWrapper> _validationWrappers;
         Dictionary<string, IValidationWrapper> ValidationWrappers

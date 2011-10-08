@@ -16,12 +16,6 @@ namespace WPFLib
         #region Constructors
 
         /// <summary>
-        /// Design time only
-        /// </summary>
-        public DelegateCommand()
-        {
-        }
-        /// <summary>
         ///     Constructor
         /// </summary>
         public DelegateCommand(Action executeMethod)
@@ -63,9 +57,13 @@ namespace WPFLib
         {
             if (_canExecuteMethod != null)
             {
-                return _canExecuteMethod();
+                IsCanExecute = _canExecuteMethod();
             }
-            return true;
+            else
+            {
+                IsCanExecute = true;
+            }
+            return IsCanExecute;
         }
 
         /// <summary>
@@ -150,8 +148,7 @@ namespace WPFLib
 
         bool ICommand.CanExecute(object parameter)
         {
-            IsCanExecute = CanExecute();
-            return IsCanExecute;
+            return CanExecute();
         }
 
         void ICommand.Execute(object parameter)
@@ -202,7 +199,7 @@ namespace WPFLib
     ///     and enables a View to bind commands to objects that are not part of the element tree.
     /// </summary>
     /// <typeparam name="T">Type of the parameter passed to the delegates</typeparam>
-    public class DelegateCommand<T> : ICommand
+    public class DelegateCommand<T> : PropertyChangedHelper, ICommand
     {
         #region Constructors
 
@@ -248,9 +245,13 @@ namespace WPFLib
         {
             if (_canExecuteMethod != null)
             {
-                return _canExecuteMethod(parameter);
+                IsCanExecute = _canExecuteMethod(parameter);
             }
-            return true;
+            else
+            {
+                IsCanExecute = true;
+            }
+            return IsCanExecute;
         }
 
         /// <summary>
@@ -341,16 +342,10 @@ namespace WPFLib
             if (parameter == null &&
                 typeof(T).IsValueType)
             {
-                return (_canExecuteMethod == null);
+                IsCanExecute = (_canExecuteMethod == null);
+                return IsCanExecute;
             }
-            if (parameter == null || typeof(T).IsAssignableFrom(parameter.GetType()))
-            {
-                return CanExecute((T)parameter);
-            }
-            else
-            {
-                return CanExecute(default(T));
-            }
+            return CanExecute((T)parameter);
         }
 
         void ICommand.Execute(object parameter)
@@ -368,6 +363,34 @@ namespace WPFLib
         private List<WeakReference> _canExecuteChangedHandlers;
 
         #endregion
+
+        #region IsCanExecuteProperty
+        public static readonly PropertyChangedEventArgs IsCanExecuteArgs = PropertyChangedHelper.CreateArgs<DelegateCommand>(c => c.IsCanExecute);
+        private bool _IsCanExecute;
+
+        public bool IsCanExecute
+        {
+            get
+            {
+                return _IsCanExecute;
+            }
+            private set
+            {
+                var oldValue = IsCanExecute;
+                _IsCanExecute = value;
+                if (oldValue != value)
+                {
+                    OnIsCanExecuteChanged(oldValue, value);
+                    OnPropertyChanged(IsCanExecuteArgs);
+                }
+            }
+        }
+
+        protected virtual void OnIsCanExecuteChanged(bool oldValue, bool newValue)
+        {
+        }
+        #endregion
+
     }
 
     /// <summary>
