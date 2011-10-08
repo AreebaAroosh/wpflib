@@ -15,6 +15,7 @@ namespace WPFLib
 {
     public class DataWrapperExtension : MarkupExtensionBase
     {
+        public bool Debug { get; set; }
         public string Dependent { get; set; }
         public string DependsOn { get; set; }
 
@@ -81,6 +82,13 @@ namespace WPFLib
             set { binding.Path = value; }
         }
 
+        [DefaultValue(null)]
+        public string BindingGroupName
+        {
+            get { return binding.BindingGroupName; }
+            set { binding.BindingGroupName = value; }
+        }
+
         public DataWrapperExtension(string path)
         {
             this.Path = new PropertyPath(path);
@@ -92,7 +100,10 @@ namespace WPFLib
             {
                 return this.binding.ProvideValue(serviceProvider);
             }
-
+            if (Debug)
+            {
+                PresentationTraceSources.SetTraceLevel(binding, PresentationTraceLevel.High);
+            }
             var manager = new DataWrapperAttachedManager(Path.Path, this.binding, targetElement, targetProperty, PyRule, Dependent, DependsOn);
 
             var metaData = targetProperty.GetMetadata(targetElement);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows.Data;
+using System.Diagnostics;
 
 namespace WPFLib
 {
@@ -12,18 +13,20 @@ namespace WPFLib
         {
             var n = new Binding();
 
+            PresentationTraceSources.SetTraceLevel(n, PresentationTraceSources.GetTraceLevel(b));
+
             n.Path = b.Path;
             n.Mode = b.Mode;
             n.BindingGroupName = b.BindingGroupName;
-            if(n.BindsDirectlyToSource != b.BindsDirectlyToSource)
+            if (n.BindsDirectlyToSource != b.BindsDirectlyToSource)
                 n.BindsDirectlyToSource = b.BindsDirectlyToSource;
             n.Converter = b.Converter;
             n.ConverterCulture = b.ConverterCulture;
             n.ConverterParameter = b.ConverterParameter;
 
-            if(n.ElementName != b.ElementName)
+            if (n.ElementName != b.ElementName)
                 n.ElementName = b.ElementName;
-            if(n.FallbackValue != b.FallbackValue)
+            if (n.FallbackValue != b.FallbackValue)
                 n.FallbackValue = b.FallbackValue;
             n.IsAsync = b.IsAsync;
             if (b.Source != null)
