@@ -11,10 +11,9 @@ namespace WPF.Reactive.Events
     /// <summary>
     /// The default implementation of <see cref="IEventPublisher"/>.
     /// </summary>
-    [Export(typeof(IEventPublisher))]
-    [PartCreationPolicy(CreationPolicy.NonShared)]
     public class DefaultEventPublisher : IEventPublisher
     {
+        readonly Dictionary<object, object> weakObservable = new Dictionary<object, object>();
         readonly Dictionary<Type, object> subjects = new Dictionary<Type, object>();
         readonly object @lock = new object();
 
@@ -23,7 +22,7 @@ namespace WPF.Reactive.Events
         /// </summary>
         /// <typeparam name="TEvent">The type of the event.</typeparam>
         /// <returns></returns>
-        public IObservable<TEvent> GetEvent<TEvent>()
+        public virtual IObservable<TEvent> GetEvent<TEvent>()
         {
             object subject;
             var eventType = typeof(TEvent);
@@ -42,17 +41,48 @@ namespace WPF.Reactive.Events
             return ((ISubject<TEvent>)subject).AsObservable();
         }
 
+        public virtual IObservable<TEvent> GetWeakEvent<TEvent>()
+        {
+            var subj = GetEvent<TEvent>();
+            return GetWeakEvent(subj);
+        }
+
+        protected IObservable<TEvent> GetWeakEvent<TEvent>(IObservable<TEvent> subj)
+        {
+            object observable;
+            if (!weakObservable.TryGetValue(subj, out observable))
+            {
+                observable = subj.AsWeakObservable();
+                weakObservable[subj] = observable;
+            }
+            return (IObservable<TEvent>)observable;
+        }
         /// <summary>
         /// Publishes the specified sample event.
         /// </summary>
         /// <typeparam name="TEvent">The type of the event.</typeparam>
         /// <param name="sampleEvent">The sample event.</param>
-        public void Publish<TEvent>(TEvent sampleEvent)
+        public virtual void Publish<TEvent>(TEvent sampleEvent)
         {
             object subject;
 
-            if (subjects.TryGetValue(typeof(TEvent), out subject))
-                ((ISubject<TEvent>)subject).OnNext(sampleEvent);
+            var baseType = typeof(TEvent);
+            while (baseType != null)
+            {
+                if (subjects.TryGetValue(baseType, out subject))
+                {
+                    subject.GetType().GetMethod("OnNext").Invoke(subject, new object[] { sampleEvent });
+                    //((ISubject<TEvent>)subject).OnNext(sampleEvent);
+                }
+                baseType = baseType.BaseType;
+            }
+            foreach (var intf in typeof(TEvent).GetInterfaces())
+            {
+                if (subjects.TryGetValue(intf, out subject))
+                {
+                    subject.GetType().GetMethod("OnNext").Invoke(subject, new object[] { sampleEvent });
+                }
+            }
         }
     }
 }

@@ -339,6 +339,7 @@
     <Compile Include="Reactive\FromPropertyChangedPattern.cs" />
     <Compile Include="Reactive\PropertyDescriptorExtensions.cs" />
     <Compile Include="Reactive\ReactiveExtensions.cs" />
+    <Compile Include="Reactive\ReactiveExtensionsWeak.cs" />
     <Compile Include="Reactive\WPFEvents.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

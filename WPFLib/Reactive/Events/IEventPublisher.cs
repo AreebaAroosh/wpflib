@@ -21,5 +21,6 @@ namespace WPFLib.Reactive
         /// <typeparam name="TEvent">The type of the event.</typeparam>
         /// <returns></returns>
         IObservable<TEvent> GetEvent<TEvent>();
+        IObservable<TEvent> GetWeakEvent<TEvent>();
     }
 }
