@@ -165,6 +165,7 @@
     <Compile Include="Adorners\ControlAdorner.cs" />
     <Compile Include="Async\PerfTimer.cs" />
     <Compile Include="Async\SynchronizationContextTaskScheduler.cs" />
+    <Compile Include="AttachedBehaviors\DataGridHelper.cs" />
     <Compile Include="AttachedBehaviors\ScrollViewerHelper.cs" />
     <Compile Include="AttachedBehaviors\ListBoxHelper.cs" />
     <Compile Include="Behaviors\DataGridRollbackOnUnfocusedBehaviour.cs" />
