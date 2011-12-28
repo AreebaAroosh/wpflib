@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="DataGridDemo.CellByCellCommit"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <DockPanel LastChildFill="False">
+        <GroupBox Header="Value in textbox" DockPanel.Dock="Top">
+            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"/>
+        </GroupBox>
+        <GroupBox Header="DataGrid" DockPanel.Dock="Top">
+            <DataGrid AutoGenerateColumns="False" x:Name="dgBase">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Value" Binding="{Binding Value}"/>
+                <DataGridTextColumn Header="-" Binding="{Binding Fake}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        </GroupBox>
+        <GroupBox Header="DataGrid with CommitCellbyCell=True" DockPanel.Dock="Top">
+
+            <DataGrid AutoGenerateColumns="False" DataGridHelp.CommitCellByCell="True" x:Name="dgCellByCell">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Value" Binding="{Binding Value}"/>
+                    <DataGridTextColumn Header="-" Binding="{Binding Fake}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+    </DockPanel>
+</UserControl>

@@ -11,6 +11,9 @@
                 <MenuItem Header="DataWrapper" Tag="DataWrapperDemoControl"/>
                 <MenuItem Header="ValidationWrapper" Tag="ValidationWrapperDemoControl"/>
             </MenuItem>
+            <MenuItem Header="DataGrid">
+                <MenuItem Header="Cell by cell commit" Tag="CellByCellCommit"/>
+            </MenuItem>
         </Menu>
         <ContentControl DockPanel.Dock="Top" x:Name="MainContent"/>
     </DockPanel>

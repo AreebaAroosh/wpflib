@@ -60,12 +60,15 @@ namespace WPFLib
 
         static void grid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
-            var grid = sender as DataGrid;
-            if (!GetIsManualCommit(grid))
+            if (e.EditAction != DataGridEditAction.Cancel)
             {
-                SetIsManualCommit(grid, true);
-                grid.CommitEdit(DataGridEditingUnit.Row, true);
-                SetIsManualCommit(grid, false);
+                var grid = sender as DataGrid;
+                if (!GetIsManualCommit(grid))
+                {
+                    SetIsManualCommit(grid, true);
+                    grid.CommitEdit(DataGridEditingUnit.Row, true);
+                    SetIsManualCommit(grid, false);
+                }
             }
         }
         #endregion

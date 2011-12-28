@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFLib", "..\WPFLib\WPFLib.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataWrapperDemo", "DataWrapperDemo\DataWrapperDemo.csproj", "{08380318-61BC-4E0E-AB69-98CAB1F4536D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGridDemo", "DataGridDemo\DataGridDemo.csproj", "{F3231B39-7461-4327-B6E3-E8F395D54F9A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,16 @@ Global
 		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{08380318-61BC-4E0E-AB69-98CAB1F4536D}.Release|x86.ActiveCfg = Release|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{F3231B39-7461-4327-B6E3-E8F395D54F9A}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
