@@ -5,10 +5,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
-using WPFLib.Misc;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Media.Animation;
 
 namespace WPFLib
 {
@@ -45,6 +42,11 @@ namespace WPFLib
 
             return finalSize;
         }
+
+        public void SetText(string text)
+        {
+            waitIndicator.Text = text;
+        }
     }
 
 
@@ -70,6 +72,50 @@ namespace WPFLib
         }
         #endregion
 
+
+
+        public static string GetText(DependencyObject obj)
+        {
+            return (string)obj.GetValue(TextProperty);
+        }
+
+        public static void SetText(DependencyObject obj, string value)
+        {
+            obj.SetValue(TextProperty, value);
+        }
+
+        // Using a DependencyProperty as the backing store for Text.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty TextProperty =
+            DependencyProperty.RegisterAttached("Text", typeof(string), typeof(WaitIndicator), new UIPropertyMetadata(OnTextChanged));
+
+        private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            OnTextChanged((string)e.NewValue, d as FrameworkElement);
+        }
+
+        private static void OnTextChanged(string newValue, FrameworkElement frameworkElement)
+        {
+            if (frameworkElement != null)
+            {
+                var layer = AdornerLayer.GetAdornerLayer(frameworkElement);
+                if (layer != null)
+                {
+                    Adorner[] adorners = layer.GetAdorners(frameworkElement);
+                    if (adorners != null)
+                    {
+                        var adorner =
+                            (WaitIndicatorAdorner)
+                            adorners.Where(a => a as WaitIndicatorAdorner != null).FirstOrDefault();
+                        if (adorner != null)
+                        {
+                            adorner.SetText(newValue);
+                        }
+                    }
+                }
+            }
+        }
+
+
         private static void OnVisibleChanged(bool visible, FrameworkElement el)
         {
             if (!el.IsLoaded)
@@ -81,46 +127,37 @@ namespace WPFLib
                 var layer = AdornerLayer.GetAdornerLayer(el);
                 if (visible)
                 {
-					if (el.Visibility == Visibility.Visible)
-					{
-						layer.Add(new WaitIndicatorAdorner(el));
-						HideByAnimation(el);
-					}
-					else
-					{
-					}
+                    var waitIndicatorAdorner = GetAdornerFromElement(el);
+                    if (waitIndicatorAdorner == null)
+                    {
+                        waitIndicatorAdorner = new WaitIndicatorAdorner(el);
+                        layer.Add(waitIndicatorAdorner);
+                    }
+                    waitIndicatorAdorner.SetText(GetText(el));
+                    el.Visibility = Visibility.Hidden;
                 }
                 else
                 {
-                	if (layer != null)
-                	{
-                        var adorners = layer.GetAdorners(el);
-                        if (adorners != null)
-                        {
-                            var adorner = adorners.Where(a => a is WaitIndicatorAdorner).FirstOrDefault();
-                            if (adorner != null)
-                            {
-                                layer.Remove(adorner);
-                                RestoreByAnimation(el);
-                            }
-                        }
-                	}
+                    var adorner = GetAdornerFromElement(el);
+                    if (adorner != null)
+                    {
+                        layer.Remove(adorner);
+                        el.Visibility = Visibility.Visible;
+                    }
                 }
             }
 
         }
 
-        static void HideByAnimation(IAnimatable el)
+        private static WaitIndicatorAdorner GetAdornerFromElement(FrameworkElement el)
         {
-            var an = new ObjectAnimationUsingKeyFrames();
-            an.BeginTime = TimeSpan.Zero;
-            an.KeyFrames.Add(new DiscreteObjectKeyFrame(Visibility.Hidden, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-            el.BeginAnimation(UIElement.VisibilityProperty, an);
-        }
-
-        static void RestoreByAnimation(IAnimatable el)
-        {
-            el.BeginAnimation(UIElement.VisibilityProperty, null);
+            var layer = AdornerLayer.GetAdornerLayer(el);
+            var adorners = layer.GetAdorners(el);
+            if (adorners != null)
+            {
+                return adorners.Where(a => a is WaitIndicatorAdorner).FirstOrDefault() as WaitIndicatorAdorner;
+            }
+            return null;
         }
 
         static void OnElementLoaded(object sender, RoutedEventArgs e)
@@ -128,6 +165,7 @@ namespace WPFLib
             var el = sender as FrameworkElement;
             el.Loaded -= new RoutedEventHandler(OnElementLoaded);
             OnVisibleChanged(GetVisible(el), el);
+            OnTextChanged(GetText(el), el);
         }
 
         #region OnCoerceVisible

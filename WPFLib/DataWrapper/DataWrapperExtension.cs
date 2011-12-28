@@ -10,6 +10,7 @@ using PyBinding;
 using System.Windows.Controls;
 using WPFLib.MarkupExtensionHelpers;
 using WPFLib.DataWrapper;
+using System.Diagnostics;
 
 namespace WPFLib
 {
