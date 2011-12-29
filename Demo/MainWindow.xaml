@@ -13,6 +13,7 @@
             </MenuItem>
             <MenuItem Header="DataGrid">
                 <MenuItem Header="Cell by cell commit" Tag="CellByCellCommit"/>
+                <MenuItem Header="Decimal input" Tag="DecimalInput"/>
             </MenuItem>
         </Menu>
         <ContentControl DockPanel.Dock="Top" x:Name="MainContent"/>

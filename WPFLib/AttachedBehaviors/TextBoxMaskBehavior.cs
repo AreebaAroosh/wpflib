@@ -17,6 +17,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Globalization;
 using System.Windows.Input;
+using System.Linq;
 
 /*
  * This file is the part of Rubenhak.Common.WPF library.
@@ -42,6 +43,18 @@ namespace WPFLib
     #endregion
     public class TextBoxMaskBehavior
     {
+        public static readonly DependencyProperty IsBindingCheckedProperty = DependencyProperty.RegisterAttached("IsBindingChecked", typeof(bool), typeof(TextBoxMaskBehavior), new FrameworkPropertyMetadata());
+
+        public static void SetIsBindingChecked(DependencyObject obj, bool value)
+        {
+            obj.SetValue(IsBindingCheckedProperty, value);
+        }
+
+        public static bool GetIsBindingChecked(DependencyObject obj)
+        {
+            return (bool)obj.GetValue(IsBindingCheckedProperty);
+        }
+
         #region MinimumValue Property
 
         public static double GetMinimumValue(DependencyObject obj)
@@ -129,20 +142,42 @@ namespace WPFLib
             if (_this == null)
                 return;
 
+            //Observable.Return(_this.IsLoaded)
+            //    .Merge(_this.LoadedObservable()
+            //                .Select(ev => true)
+            //        )
+            //    .Where(v => v)
+            //    .Take(1)
+            //    .Subscribe(() => CheckTextBox(_this));
+
             if ((NumericType)e.NewValue != NumericType.Any)
             {
+                _this.TextChanged += new TextChangedEventHandler(_this_TextChanged);
                 _this.PreviewTextInput += TextBox_PreviewTextInput;
                 _this.PreviewKeyDown += TextBox_PreviewKeyDown;
-                _this.KeyDown += new KeyEventHandler(_this_KeyDown);
                 DataObject.AddPastingHandler(_this, (DataObjectPastingEventHandler)TextBoxPastingEventHandler);
             }
 
             ValidateTextBox(_this);
         }
 
-        static void _this_KeyDown(object sender, KeyEventArgs e)
+        static void CheckTextBox(TextBox tb)
         {
-            
+            var mask = GetMask(tb);
+            if (mask == NumericType.Decimal)
+            {
+                var bind = tb.GetBindingExpression(TextBox.TextProperty);
+                if (!(bind.ParentBinding.Converter is DecimalMaskConverter))
+                {
+                    throw new InvalidOperationException("For Decimal mask Converter must be DecimalMaskConverter");
+                }
+            }
+
+        }
+
+        static void _this_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
         }
 
         static void TextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -160,8 +195,18 @@ namespace WPFLib
                     int caret = _this.CaretIndex;
                     if (_this.SelectionLength > 0)
                     {
+                        var selected = text.Substring(_this.SelectionStart, _this.SelectionLength);
                         text = text.Substring(0, _this.SelectionStart) + _this.Text.Substring(_this.SelectionStart + _this.SelectionLength);
-                        caret = _this.SelectionStart;
+                        if (e.Key == Key.Back && text == NumberFormatInfo.CurrentInfo.NegativeSign && selected == "0")
+                        {
+                            text = "0";
+                            caret = 0;
+                            selectionLength = 1;
+                        }
+                        else
+                        {
+                            caret = _this.SelectionStart;
+                        }
                     }
                     else
                     {
@@ -181,6 +226,12 @@ namespace WPFLib
                         caret = 1;
                         selectionLength = 1;
                     }
+                    if (String.IsNullOrEmpty(text))
+                    {
+                        text = "0";
+                        caret = 0;
+                        selectionLength = 1;
+                    }
                     _this.Text = text;
                     _this.CaretIndex = caret;
                     _this.SelectionLength = selectionLength;
@@ -197,10 +248,10 @@ namespace WPFLib
         {
             if (GetMask(_this) != NumericType.Any)
             {
-				bool validated;
+                bool validated;
                 var validatedValue = ValidateValue(GetMask(_this), _this.Text, GetMinimumValue(_this), GetMaximumValue(_this), out validated);
-				if (validated)
-					_this.Text = validatedValue;
+                if (validated)
+                    _this.Text = validatedValue;
             }
         }
 
@@ -210,17 +261,17 @@ namespace WPFLib
             if (_this.IsReadOnly)
                 return;
             string clipboard = e.DataObject.GetData(typeof(string)) as string;
-			bool validated;
+            bool validated;
             clipboard = ValidateValue(GetMask(_this), clipboard, GetMinimumValue(_this), GetMaximumValue(_this), out validated);
             if (!string.IsNullOrEmpty(clipboard))
             {
                 _this.Text = clipboard;
             }
-			if (validated)
-			{
-				e.CancelCommand();
-				e.Handled = true;
-			}
+            if (validated)
+            {
+                e.CancelCommand();
+                e.Handled = true;
+            }
         }
 
         private static void TextBox_PreviewTextInput(object sender, System.Windows.Input.TextCompositionEventArgs e)
@@ -228,10 +279,20 @@ namespace WPFLib
             TextBox _this = (sender as TextBox);
             if (_this.IsReadOnly)
                 return;
-            bool isValid = IsSymbolValid(GetMask(_this), e.Text);
+            var eText = e.Text;
+            if (eText == NumberFormatInfo.CurrentInfo.PositiveSign && _this.Text.StartsWith(NumberFormatInfo.CurrentInfo.NegativeSign))
+            {
+                eText = NumberFormatInfo.CurrentInfo.NegativeSign;
+            }
+            bool isValid = IsSymbolValid(GetMask(_this), eText);
             e.Handled = !isValid;
             if (isValid)
             {
+                if (!GetIsBindingChecked(_this))
+                {
+                    CheckTextBox(_this);
+                    SetIsBindingChecked(_this, true);
+                }
                 if (_this.Text.StartsWith(NumberFormatInfo.CurrentInfo.NegativeSign) && _this.CaretIndex < NumberFormatInfo.CurrentInfo.NegativeSign.Length && _this.SelectionLength == 0)
                 {
                     e.Handled = true;
@@ -249,7 +310,7 @@ namespace WPFLib
                     caret = _this.SelectionStart;
                 }
 
-                if (e.Text == NumberFormatInfo.CurrentInfo.NumberDecimalSeparator)
+                if (eText == NumberFormatInfo.CurrentInfo.NumberDecimalSeparator)
                 {
                     while (true)
                     {
@@ -284,7 +345,7 @@ namespace WPFLib
                         caret++;
                     }
                 }
-                else if (e.Text == NumberFormatInfo.CurrentInfo.NegativeSign && selectionLength < text.Length)
+                else if (eText == NumberFormatInfo.CurrentInfo.NegativeSign && selectionLength < text.Length)
                 {
                     textInserted = true;
                     if (_this.Text.Contains(NumberFormatInfo.CurrentInfo.NegativeSign))
@@ -302,7 +363,7 @@ namespace WPFLib
 
                 if (!textInserted)
                 {
-                    text = text.Substring(0, caret) + e.Text +
+                    text = text.Substring(0, caret) + eText +
                         ((caret < _this.Text.Length) ? text.Substring(caret) : string.Empty);
 
                     caret++;
@@ -358,13 +419,14 @@ namespace WPFLib
                 _this.CaretIndex = caret;
                 _this.SelectionStart = caret;
                 _this.SelectionLength = selectionLength;
+                //_this.Text = text;
                 e.Handled = true;
             }
         }
 
         private static string ValidateValue(NumericType mask, string value, double min, double max, out bool validated)
         {
-			validated = false;
+            validated = false;
             if (string.IsNullOrEmpty(value))
                 return string.Empty;
 
@@ -374,12 +436,12 @@ namespace WPFLib
                 case NumericType.Integer:
                     try
                     {
-						Int64 result;
-						if (Int64.TryParse(value, out result))
-                    	{
-                    		validated = true;
-                    		return value;
-                    	}
+                        Int64 result;
+                        if (Int64.TryParse(value, out result))
+                        {
+                            validated = true;
+                            return value;
+                        }
                     }
                     catch
                     {
@@ -389,12 +451,12 @@ namespace WPFLib
                 case NumericType.Decimal:
                     try
                     {
-						double result;
-						if (Double.TryParse(value, out result))
-						{
-							validated = true;
-							return value;
-						}
+                        double result;
+                        if (Double.TryParse(value, out result))
+                        {
+                            validated = true;
+                            return value;
+                        }
                     }
                     catch
                     {
@@ -422,7 +484,7 @@ namespace WPFLib
             return value;
         }
 
-        private static bool IsSymbolValid(NumericType mask, string str)
+        public static bool IsSymbolValid(NumericType mask, string str)
         {
             switch (mask)
             {

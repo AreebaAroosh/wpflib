@@ -20,6 +20,34 @@ namespace DataGridDemo
 {
     class C : DispatcherPropertyChangedHelper
     {
+        #region DecProperty
+        public static readonly PropertyChangedEventArgs DecArgs = PropertyChangedHelper.CreateArgs<C>(c => c.Dec);
+        private decimal _Dec;
+
+        public decimal Dec
+        {
+            get
+            {
+                return _Dec;
+            }
+            set
+            {
+                var oldValue = Dec;
+                _Dec = value;
+                if (oldValue != value)
+                {
+                    OnDecChanged(oldValue, value);
+                    OnPropertyChanged(DecArgs);
+                }
+            }
+        }
+
+        protected virtual void OnDecChanged(decimal oldValue, decimal newValue)
+        {
+        }
+        #endregion
+
+
         #region ValueProperty
         public static readonly PropertyChangedEventArgs ValueArgs = PropertyChangedHelper.CreateArgs<C>(c => c.Value);
         private string _Value;

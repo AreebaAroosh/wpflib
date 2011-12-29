@@ -168,6 +168,7 @@
     <Compile Include="AttachedBehaviors\DataGridHelper.cs" />
     <Compile Include="AttachedBehaviors\ScrollViewerHelper.cs" />
     <Compile Include="AttachedBehaviors\ListBoxHelper.cs" />
+    <Compile Include="AttachedBehaviors\TextBoxMask\DecimalMaskConverter.cs" />
     <Compile Include="Behaviors\DataGridRollbackOnUnfocusedBehaviour.cs" />
     <Compile Include="Collections\DispatcherCollection.cs" />
     <Compile Include="Collections\EnumeratorHelper.cs" />
@@ -238,6 +239,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Database\DbCommonUtils.cs" />
+    <Compile Include="DataGrid\DecimalDataGridColumn.cs" />
     <Compile Include="DataWrapper\DataWrapper.cs" />
     <Compile Include="DataWrapper\DataWrapperAttachedManager.cs" />
     <Compile Include="DataWrapper\DataWrapperExtension.cs" />

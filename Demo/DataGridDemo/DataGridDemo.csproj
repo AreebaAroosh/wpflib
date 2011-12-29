@@ -55,6 +55,9 @@
     <Compile Include="CellByCellCommit.xaml.cs">
       <DependentUpon>CellByCellCommit.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DecimalInput.xaml.cs">
+      <DependentUpon>DecimalInput.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -80,6 +83,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="CellByCellCommit.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DecimalInput.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
