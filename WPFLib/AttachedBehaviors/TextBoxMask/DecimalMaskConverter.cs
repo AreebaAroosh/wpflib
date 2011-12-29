@@ -10,6 +10,22 @@ namespace WPFLib
 {
     public class DecimalMaskConverter : MarkupExtension, IValueConverter
     {
+        string DecSep
+        {
+            get
+            {
+                return NumberFormatInfo.CurrentInfo.NumberDecimalSeparator;
+            }
+        }
+
+        string Neg
+        {
+            get
+            {
+                return NumberFormatInfo.CurrentInfo.NegativeSign;
+            }
+        }
+
         private string _lastValue;
         bool negativeZero = false;
 
@@ -22,7 +38,7 @@ namespace WPFLib
                 return _lastValue;
             }
             var valueString = value != null ? ToString(value) : String.Empty;
-            if (_lastValue == valueString + NumberFormatInfo.CurrentInfo.NumberDecimalSeparator + "0")
+            if (_lastValue == valueString + DecSep + "0")
                 return _lastValue;
             return valueString;
         }
@@ -45,7 +61,7 @@ namespace WPFLib
             _lastValue = (string)value;
 
             // Тупое решение проблемы с конвертерами
-            if (_lastValue == "-0")
+            if (_lastValue == Neg + "0" || _lastValue == Neg + "0" + DecSep + "0" )
             {
                 negativeZero = true;
                 return value;

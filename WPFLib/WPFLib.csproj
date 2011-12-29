@@ -182,7 +182,7 @@
     <Compile Include="Controls\AsyncTreeListView\TreeListViewVertLines.cs" />
     <Compile Include="Controls\AsyncTreeView\AsyncTreeView.cs" />
     <Compile Include="AttachedBehaviors\ComboBoxFix.cs" />
-    <Compile Include="AttachedBehaviors\TextBoxMaskBehavior.cs" />
+    <Compile Include="AttachedBehaviors\TextBoxMask\TextBoxMaskBehavior.cs" />
     <Compile Include="AttachedBehaviors\WaitIndicator.cs" />
     <Compile Include="AttachedBehaviors\WindowHelper.cs" />
     <Compile Include="AttachedBehaviors\WindowSettings.cs" />
